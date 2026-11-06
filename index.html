@@ -94,6 +94,10 @@ main{display:grid;grid-template-columns:2fr 1fr;gap:16px;padding:0 16px 12px;hei
 .poub{border:0;background:none;padding:0 .1rem;font-size:1rem;line-height:1;opacity:.35}
 .poub:hover{opacity:1;border:0}
 .actions{display:flex;flex-direction:column;align-items:center;gap:.35rem}
+.nb{display:inline-block;min-width:1.2rem;border-radius:10px;background:var(--bleu);color:var(--nuit);font-size:.7rem;padding:0 .35rem;margin-left:.3rem}
+.coches label{display:flex;align-items:center;gap:.5rem;margin:.3rem 0;color:var(--nuit);font-weight:600;font-size:.9rem}
+.coches .pastille{width:.8rem;height:.8rem;border-radius:3px;display:inline-block}
+.coches small{color:var(--texte_doux);font-weight:500}
 .legende{display:flex;gap:.6rem;font-size:.72rem;color:var(--texte_doux);margin:.1rem 0 .4rem}
 .imp{letter-spacing:-1px;color:var(--bleu)}
 .imp i{font-style:normal;color:var(--gris)}
@@ -181,6 +185,7 @@ dialog::backdrop{background:#121935b0}
       <button id="prev" title="Mois précédent (←)">‹</button><h2 id="titre-mois"></h2><button id="next" title="Mois suivant (→)">›</button>
       <button id="auj">Aujourd'hui</button>
       <span class="clavier">ou flèches <kbd>←</kbd> <kbd>→</kbd> du clavier</span>
+      <button id="b-aff" title="Choisir ce qui s'affiche">👁 Affichage<span class="nb hide" id="aff-nb"></span></button>
       <button id="b-cats">Catégories</button>
       <button class="prim" id="b-tache">+ Tâche</button>
     </div>
@@ -190,10 +195,8 @@ dialog::backdrop{background:#121935b0}
         <div id="alerte"></div>
         <h3>À faire</h3>
         <div class="filt">
-          <select id="f-cat"></select>
           <select id="f-tri"><option value="date">Tri : échéance</option><option value="imp">Tri : importance</option></select>
         </div>
-        <label style="margin:0 0 .2rem"><input type="checkbox" id="f-done"> Afficher les tâches terminées</label>
         <div class="legende"><span class="ech rouge">≤ 2 j</span><span class="ech orange">≤ 7 j</span><span class="ech vert">plus tard</span></div>
         <div id="liste"></div>
       </div>
@@ -253,6 +256,21 @@ dialog::backdrop{background:#121935b0}
   <div class="acts"><button type="button" class="dang" id="t-suppr">Supprimer</button><span class="sp"></span><button value="cancel" formnovalidate>Annuler</button><button class="prim" value="ok">Enregistrer</button></div>
 </form></dialog>
 
+<!-- ===== Fenêtre affichage (préférences enregistrées dans le compte) ===== -->
+<dialog id="d-aff"><form method="dialog">
+  <h3>Affichage</h3>
+  <p style="font-size:.82rem;color:var(--texte_doux);margin:.4rem 0 0">Appliqué au calendrier et à la liste, et retenu comme affichage par défaut sur tous tes appareils.</p>
+  <label>Tâches</label>
+  <div class="coches">
+    <label><input type="checkbox" data-f="fait"> Terminées</label>
+    <label><input type="checkbox" data-f="passees"> Passées <small>(échéance dépassée)</small></label>
+    <label><input type="checkbox" data-f="recurrentes"> Récurrentes <small>(🔁 et leurs prochaines dates)</small></label>
+  </div>
+  <label>Catégories <button type="button" id="aff-tout" style="padding:0 .5rem;margin-left:.4rem">Tout</button><button type="button" id="aff-rien" style="padding:0 .5rem;margin-left:.2rem">Aucune</button></label>
+  <div class="coches" id="aff-cats"></div>
+  <div class="acts"><button class="prim" value="ok">Fermer</button></div>
+</form></dialog>
+
 <!-- ===== Fenêtre catégories ===== -->
 <dialog id="d-cats"><form method="dialog" id="f-cat-form">
   <h3>Catégories</h3>
@@ -292,6 +310,8 @@ const EMOJIS = ["📌","💼","🏠","🚴","🏃","📚","🔬","💶","🛒","
 // Couleurs proposées : DATAfutée d'abord, puis quelques teintes complémentaires
 const COULEURS = ["#15acfd","#121935","#0a5f8c","#4a5170","#22c55e","#f59e0b","#e5484d","#8b5cf6"];
 let S = {cats:[], taches:[], mois:new Date(new Date().getFullYear(), new Date().getMonth(), 1), edit:null, editCat:null, imp:2};
+// Filtres d'affichage par défaut (remplacés par ceux du compte à la connexion)
+let F = {fait:false, passees:true, recurrentes:true, cachees:[], tri:"date"};
 const cat = id => S.cats.find(c => c.id === id) || {nom:"Sans catégorie", couleur:"#9aa5a8", icone:"•"};
 const oops = e => { if (e) { alert("Erreur : " + e.message); throw e; } };
 
@@ -308,9 +328,12 @@ $("#f-login").onsubmit = async e => {
       : "Erreur Supabase : " + m; }
 };
 $("#b-out").onclick = () => sb.auth.signOut();
-sb.auth.onAuthStateChange((_, session) => {
+sb.auth.onAuthStateChange((ev, session) => {
   $("#login").classList.toggle("hide", !!session); $("#app").classList.toggle("hide", !session);
-  if (session) setTimeout(charger, 0);
+  if (!session || ev === "USER_UPDATED" || ev === "TOKEN_REFRESHED") return;
+  // Préférences d'affichage stockées dans le profil Supabase (communes à tous les appareils)
+  F = {...F, ...(session.user.user_metadata?.affichage ?? {})}; $("#f-tri").value = F.tri;
+  setTimeout(charger, 0);
 });
 
 // ===== Onglets Agenda / Schémas =====
@@ -396,11 +419,30 @@ async function charger() {
 function rendu() {
   // Listes déroulantes de catégories
   const opts = S.cats.map(c => `<option value="${c.id}">${esc(c.icone)} ${esc(c.nom)}</option>`).join("");
-  const fc = $("#f-cat").value;
-  $("#f-cat").innerHTML = `<option value="">Toutes catégories</option>` + opts; $("#f-cat").value = fc;
   $("#t-cat").innerHTML = `<option value="">Sans catégorie</option>` + opts;
-  calendrier(); liste(); alerte();
+  calendrier(); liste(); alerte(); badge();
 }
+
+// ===== Filtres d'affichage =====
+const catVisible = t => !F.cachees.includes(t.categorie_id ?? "");
+const visible = t => catVisible(t) && (F.fait || !t.fait) && (F.passees || !t.echeance || t.echeance >= auj()) && (F.recurrentes || !t.recurrence);
+// Pastille du bouton : nombre de critères qui masquent des tâches
+const badge = () => { const n = !F.fait + !F.passees + !F.recurrentes + F.cachees.length; $("#aff-nb").textContent = n; $("#aff-nb").classList.toggle("hide", !n); };
+let tPref; const enregistrerF = () => { clearTimeout(tPref); tPref = setTimeout(() => sb.auth.updateUser({data:{affichage:F}}), 800); };
+function cochesAff() {
+  document.querySelectorAll("#d-aff [data-f]").forEach(c => c.checked = F[c.dataset.f]);
+  $("#aff-cats").innerHTML = [...S.cats, {id:"", nom:"Sans catégorie", couleur:"#9aa5a8", icone:"•"}].map(c =>
+    `<label><input type="checkbox" data-c="${c.id}" ${F.cachees.includes(c.id) ? "" : "checked"}><span class="pastille" style="background:${c.couleur}"></span>${esc(c.icone)} ${esc(c.nom)}</label>`).join("");
+}
+$("#b-aff").onclick = () => { cochesAff(); $("#d-aff").showModal(); };
+// Toute modification s'applique tout de suite et est enregistrée
+$("#d-aff").onchange = e => {
+  if (e.target.dataset.f) F[e.target.dataset.f] = e.target.checked;
+  if (e.target.dataset.c !== undefined) F.cachees = [...document.querySelectorAll("#aff-cats [data-c]")].filter(c => !c.checked).map(c => c.dataset.c);
+  rendu(); enregistrerF();
+};
+$("#aff-tout").onclick = () => { F.cachees = []; cochesAff(); rendu(); enregistrerF(); };
+$("#aff-rien").onclick = () => { F.cachees = [...S.cats.map(c => c.id), ""]; cochesAff(); rendu(); enregistrerF(); };
 
 // ===== Encadré : tâches étoilées en retard ou dues sous 7 jours =====
 function alerte() {
@@ -417,9 +459,9 @@ function calendrier() {
   for (let i = 0; i < 42; i++) {
     const d = new Date(debut); d.setDate(debut.getDate() + i); const k = iso(d);
     // Tâches du jour : les plus importantes en premier, les terminées en dernier
-    const ts = S.taches.filter(t => t.echeance === k).sort((a, b) => a.fait - b.fait || parImp(a, b));
+    const ts = S.taches.filter(t => t.echeance === k && visible(t)).sort((a, b) => a.fait - b.fait || parImp(a, b));
     // Occurrences futures des tâches récurrentes (affichées en pointillé) et jour férié éventuel
-    const vs = S.taches.filter(t => occurrence(t, k)), fer = feries(d.getFullYear())[k];
+    const vs = F.recurrentes ? S.taches.filter(t => occurrence(t, k) && catVisible(t)) : [], fer = feries(d.getFullYear())[k];
     h += `<div class="day ${d.getMonth() !== m.getMonth() ? "out" : ""} ${k === auj() ? "today" : ""} ${d.getDay() % 6 === 0 ? "we" : ""} ${fer ? "ferie" : ""}" data-d="${k}"><span class="n">${d.getDate()}</span>${fer ? `<span class="fer">${fer}</span>` : ""}`
       + ts.map(t => `<span class="chip ${t.fait ? "done" : ""} ${t.importance === 3 && !t.fait ? "haute" : ""}" data-id="${t.id}" style="border-color:${cat(t.categorie_id).couleur}">${t.etoile ? "⭐" : esc(cat(t.categorie_id).icone)} ${esc(t.titre)}</span>`).join("")
       + vs.map(t => `<span class="chip virt" data-id="${t.id}" style="border-color:${cat(t.categorie_id).couleur}" title="Prochaine occurrence (tâche répétée)">🔁 ${esc(t.titre)}</span>`).join("") + `</div>`;
@@ -446,8 +488,8 @@ $("#auj").onclick = () => { S.mois = new Date(new Date().getFullYear(), new Date
 
 // ===== To-do list =====
 function liste() {
-  const fc = $("#f-cat").value, done = $("#f-done").checked, tri = $("#f-tri").value;
-  const ts = S.taches.filter(t => (!fc || t.categorie_id === fc) && (done || !t.fait))
+  const tri = F.tri;
+  const ts = S.taches.filter(visible)
     .sort((a, b) => tri === "imp" ? parImp(a, b) || parDate(a, b) : parDate(a, b) || parImp(a, b));
   $("#liste").innerHTML = ts.map(t => { const c = cat(t.categorie_id);
     return `<div class="task ${t.fait ? "done" : ""}" data-id="${t.id}" style="border-left-color:${c.couleur}">
@@ -455,9 +497,9 @@ function liste() {
       <div class="t"><span>${esc(c.icone)} ${esc(t.titre)}</span>
       <div class="m">${points(t.importance ?? 2)} ${esc(c.nom)}${t.echeance ? ` · ${echeance(t)}` : ""}${t.recurrence ? ` · 🔁 ${REC[t.recurrence]}` : ""}</div></div>
       <div class="actions"><button class="star ${t.etoile ? "on" : ""}" title="Rappel par mail 7 j et 1 j avant">${t.etoile ? "★" : "☆"}</button><button class="poub" title="Supprimer la tâche">🗑</button></div></div>`;
-  }).join("") || `<p class="m" style="color:var(--texte_doux)">Rien à faire 🎉</p>`;
+  }).join("") || `<p class="m" style="color:var(--texte_doux)">${S.taches.length > S.taches.filter(visible).length ? "Aucune tâche avec l'affichage actuel (👁 Affichage pour en montrer plus)." : "Rien à faire 🎉"}</p>`;
 }
-["#f-cat", "#f-tri", "#f-done"].forEach(s => $(s).onchange = liste);
+$("#f-tri").onchange = e => { F.tri = e.target.value; liste(); enregistrerF(); };
 $("#liste").onclick = async e => {
   const el = e.target.closest(".task"); if (!el) return; const t = S.taches.find(x => x.id === el.dataset.id);
   // Poubelle : supprimer ; étoile : basculer le rappel mail ; case à cocher : basculer « fait » ; sinon : ouvrir la tâche
