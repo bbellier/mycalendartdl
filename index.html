@@ -153,6 +153,30 @@ dialog::backdrop{background:#121935b0}
 .bloc li+li{border-top:1px dashed var(--trait)}
 .bloc.src{outline:3px dashed var(--bleu);outline-offset:3px}
 #canvas.liaison .bloc:not(.src){cursor:crosshair}
+.bloc.sel{outline:3px solid var(--bleu);outline-offset:2px}
+.bloc .ecl{background:#ffffff30;border:0;padding:.05rem .3rem;border-radius:6px;color:#fff}
+.bloc .ecl:hover{background:#ffffff70}
+#lasso{position:absolute;border:2px dashed var(--bleu);background:#15acfd18;pointer-events:none}
+/* ===== Notes (façon Keep) ===== */
+#v-notes{padding:12px 16px}
+.nbar{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-bottom:12px}
+.nbar input{max-width:320px}
+.composer{max-width:560px;margin:0 auto 18px;border:1px solid var(--trait);border-top:3px solid var(--bleu);border-radius:0 0 12px 12px;padding:.6rem .8rem;box-shadow:0 2px 8px #12193514}
+.composer input,.composer textarea{border:0;padding:.3rem 0;outline:0!important;resize:vertical}
+.composer input{font-weight:700}
+.composer .acts{margin-top:.3rem}
+.ntitre{font-size:.8rem;font-weight:700;color:var(--texte_doux);text-transform:uppercase;letter-spacing:.05em;margin:.4rem 0 .5rem}
+.grille{columns:240px;column-gap:12px}
+.note{break-inside:avoid;margin-bottom:12px;border:1px solid var(--trait);border-radius:12px;padding:.7rem .85rem;cursor:pointer;position:relative;transition:box-shadow .2s}
+.note:hover{box-shadow:0 4px 14px #12193522}
+.note h4{margin:0 1.6rem .3rem 0;font-size:.98rem}
+.note p{margin:0;white-space:pre-wrap;font-size:.88rem;color:#2b3350;max-height:16em;overflow:hidden}
+.note .pin{position:absolute;top:.4rem;right:.4rem;border:0;background:none;padding:.1rem;opacity:.3;font-size:.95rem}
+.note .pin.on,.note:hover .pin{opacity:1}
+.note small{display:block;margin-top:.5rem;font-size:.7rem;color:var(--texte_doux)}
+.pastels{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.pastels button{width:28px;height:28px;padding:0;border-radius:50%;border:1px solid var(--trait)}
+.pastels button.on{box-shadow:0 0 0 2px var(--nuit)}
 </style>
 </head>
 <body>
@@ -175,7 +199,7 @@ dialog::backdrop{background:#121935b0}
 <section id="app" class="hide">
   <nav>
     <span class="logo"><img src="https://bbellier.github.io/mydatafutee/img/logo.png" alt="DATAfutée"></span>
-    <div class="onglets"><button class="on" data-v="agenda">📅 Agenda</button><button data-v="schemas">🧠 Schémas</button></div>
+    <div class="onglets"><button class="on" data-v="agenda">📅 Agenda</button><button data-v="schemas">🧠 Schémas</button><button data-v="notes">📝 Notes</button></div>
     <button id="b-out" title="Déconnexion">⏻</button>
   </nav>
 
@@ -210,9 +234,10 @@ dialog::backdrop{background:#121935b0}
       <button id="s-new">+ Schéma</button><button id="s-ren">Renommer</button><button class="dang" id="s-del">Supprimer</button>
       <span class="sp"></span>
       <div class="zoom"><button id="z-moins" title="Dézoomer (Ctrl + molette)">−</button><span id="z-val">100 %</span><button id="z-plus" title="Zoomer (Ctrl + molette)">+</button><button id="z-ajust" title="Afficher tout le schéma">⤢ Tout voir</button></div>
+      <button id="s-aide" title="Afficher ou masquer le mode d'emploi">❓ Aide</button>
       <button class="prim" id="s-bloc">+ Bloc</button>
     </div>
-    <div class="aide">
+    <div class="aide" id="aide">
       <span><b>➕ Ajouter un bloc</b>double-clic dans une zone vide</span>
       <span><b>✏️ Modifier un bloc</b>double-clic dessus</span>
       <span><b>✋ Déplacer</b>cliquer-glisser le bloc</span>
@@ -220,9 +245,22 @@ dialog::backdrop{background:#121935b0}
       <span><b>✂️ Supprimer un lien</b>clic sur le trait</span>
       <span><b>🗑 Supprimer un bloc</b>clic sur 🗑 du bloc</span>
       <span><b>🔍 Zoomer</b>Ctrl + molette, ou boutons − / +</span>
+      <span><b>⬚ Sélectionner plusieurs blocs</b>glisser dans une zone vide, ou Maj + clic · puis glisser l'un d'eux pour tout déplacer</span>
+      <span><b>⇊ Éclater</b>transforme chaque ligne d'un bloc en bloc relié</span>
     </div>
     <div id="s-etat" class="hide"></div>
     <div id="canvas-wrap"><div id="zone"><div id="canvas"><svg id="liens"></svg></div></div></div>
+  </div>
+
+  <!-- ===== Onglet Notes ===== -->
+  <div id="v-notes" class="hide">
+    <div class="nbar"><input id="n-cherche" type="search" placeholder="🔍 Rechercher dans les notes"></div>
+    <div class="composer">
+      <input id="n-titre" placeholder="Titre">
+      <textarea id="n-texte" rows="2" placeholder="Créer une note… (Ctrl + Entrée pour ajouter)"></textarea>
+      <div class="acts"><span class="sp"></span><button class="prim" id="n-ajout">Ajouter</button></div>
+    </div>
+    <div id="notes"></div>
   </div>
 </section>
 
@@ -243,9 +281,10 @@ dialog::backdrop{background:#121935b0}
   <h3 id="dt-titre">Tâche</h3>
   <label>Titre</label><input id="t-titre" required>
   <div class="row">
-    <div><label>Échéance</label><input id="t-date" type="date"></div>
-    <div><label>Catégorie</label><select id="t-cat"></select></div>
+    <div><label>Du <small>(facultatif)</small></label><input id="t-debut" type="date"></div>
+    <div><label>Au / échéance</label><input id="t-date" type="date"></div>
   </div>
+  <label>Catégorie</label><select id="t-cat"></select>
   <label>Importance</label>
   <div class="niveaux" id="t-imp"><button type="button" data-n="1">● Basse</button><button type="button" data-n="2">●● Moyenne</button><button type="button" data-n="3">●●● Haute</button></div>
   <label>Répétition</label>
@@ -254,6 +293,15 @@ dialog::backdrop{background:#121935b0}
   <label class="opt"><input type="checkbox" id="t-etoile"> ⭐ Rappel par mail 7 jours et 1 jour avant l'échéance</label>
   <label><input type="checkbox" id="t-fait"> Terminée</label>
   <div class="acts"><button type="button" class="dang" id="t-suppr">Supprimer</button><span class="sp"></span><button value="cancel" formnovalidate>Annuler</button><button class="prim" value="ok">Enregistrer</button></div>
+</form></dialog>
+
+<!-- ===== Fenêtre note ===== -->
+<dialog id="d-note"><form method="dialog">
+  <input id="dn-titre" placeholder="Titre" style="font-weight:700;font-size:1.05rem">
+  <textarea id="dn-texte" rows="10" placeholder="Note" style="margin-top:.5rem"></textarea>
+  <label>Couleur</label><div class="pastels" id="dn-coul"></div>
+  <label class="opt"><input type="checkbox" id="dn-pin"> 📌 Épingler en haut</label>
+  <div class="acts"><button type="button" class="dang" id="dn-suppr">Supprimer</button><span class="sp"></span><button value="cancel" formnovalidate>Annuler</button><button class="prim" value="ok">Enregistrer</button></div>
 </form></dialog>
 
 <!-- ===== Fenêtre affichage (préférences enregistrées dans le compte) ===== -->
@@ -301,7 +349,8 @@ const fmt = s => s ? new Date(s+"T12:00").toLocaleDateString("fr-FR",{day:"numer
 // Couleur d'échéance selon le nombre de jours restants
 const jours = s => Math.round((new Date(s + "T12:00") - new Date(auj() + "T12:00")) / 864e5);
 const urgence = s => { const j = jours(s); return j <= 2 ? "rouge" : j <= 7 ? "orange" : "vert"; };
-const echeance = (t) => { const j = jours(t.echeance), txt = j < 0 ? `en retard · ${fmt(t.echeance)}` : j === 0 ? "aujourd'hui" : j === 1 ? "demain" : fmt(t.echeance);
+const echeance = (t) => { const j = jours(t.echeance), enCours = t.debut && t.debut <= auj() && j >= 0;
+  const txt = j < 0 ? `en retard · ${fmt(t.echeance)}` : enCours ? `en cours · jusqu'au ${j === 0 ? "aujourd'hui" : fmt(t.echeance)}` : t.debut ? `du ${fmt(t.debut)} au ${fmt(t.echeance)}` : j === 0 ? "aujourd'hui" : j === 1 ? "demain" : fmt(t.echeance);
   return `<span class="ech ${t.fait ? "" : urgence(t.echeance)}">${txt}</span>`; };
 const points = n => `<span class="imp" title="Importance">${"●".repeat(n)}<i>${"●".repeat(3 - n)}</i></span>`;
 const parDate = (a, b) => (a.echeance ?? "9").localeCompare(b.echeance ?? "9");
@@ -340,8 +389,8 @@ sb.auth.onAuthStateChange((ev, session) => {
 const vue = () => $(".onglets .on").dataset.v;
 document.querySelectorAll(".onglets button").forEach(b => b.onclick = () => {
   document.querySelectorAll(".onglets button").forEach(x => x.classList.toggle("on", x === b));
-  $("#v-agenda").classList.toggle("hide", b.dataset.v !== "agenda"); $("#v-schemas").classList.toggle("hide", b.dataset.v !== "schemas");
-  b.dataset.v === "schemas" ? chargerSchemas() : calendrier();
+  ["agenda", "schemas", "notes"].forEach(v => $("#v-" + v).classList.toggle("hide", b.dataset.v !== v));
+  ({agenda:calendrier, schemas:() => chargerSchemas(), notes:chargerNotes})[b.dataset.v]();
 });
 
 // ===== Clavier : ← → changent de mois, Échap annule une liaison =====
@@ -388,7 +437,9 @@ function occurrence(t, k) {
 async function prochaine(t) {
   if (!t.recurrence || !t.echeance) return;
   const {id, user_id, created_at, ...copie} = t;
-  oops((await sb.from("taches").insert({...copie, echeance:suivante(t.echeance, t.recurrence), fait:false})).error);
+  const ne = suivante(t.echeance, t.recurrence), duree = t.debut ? jours(t.echeance) - jours(t.debut) : 0;
+  const nd = t.debut ? iso(new Date(new Date(ne + "T12:00") - duree * 864e5)) : null;
+  oops((await sb.from("taches").insert({...copie, debut:nd, echeance:ne, fait:false})).error);
   oops((await sb.from("taches").update({recurrence:null}).eq("id", t.id)).error);
 }
 
@@ -396,7 +447,11 @@ document.addEventListener("keydown", e => {
   if (document.querySelector("dialog[open]") || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || $("#app").classList.contains("hide")) return;
   if (vue() === "agenda" && e.key === "ArrowLeft") { e.preventDefault(); changerMois(-1); }
   if (vue() === "agenda" && e.key === "ArrowRight") { e.preventDefault(); changerMois(1); }
-  if (vue() === "schemas" && e.key === "Escape" && M.src) { M.src = null; dessiner(); }
+  if (vue() === "schemas" && e.key === "Escape" && (M.src || M.sel.size)) { M.src = null; M.sel.clear(); dessiner(); }
+  if (vue() === "schemas" && (e.key === "Delete" || e.key === "Backspace") && M.sel.size) {
+    e.preventDefault(); if (!confirm(`Supprimer les ${M.sel.size} bloc(s) sélectionné(s) et leurs liens ?`)) return; const d = M.cur.data;
+    d.blocs = d.blocs.filter(b => !M.sel.has(b.id)); d.liens = d.liens.filter(l => !M.sel.has(l.de) && !M.sel.has(l.vers)); M.sel.clear(); sauver(); dessiner();
+  }
 });
 
 // ===== Nuanciers de couleurs (catégories et blocs) =====
@@ -459,11 +514,11 @@ function calendrier() {
   for (let i = 0; i < 42; i++) {
     const d = new Date(debut); d.setDate(debut.getDate() + i); const k = iso(d);
     // Tâches du jour : les plus importantes en premier, les terminées en dernier
-    const ts = S.taches.filter(t => t.echeance === k && visible(t)).sort((a, b) => a.fait - b.fait || parImp(a, b));
+    const ts = S.taches.filter(t => (t.echeance === k || (t.debut && t.debut <= k && k <= t.echeance)) && visible(t)).sort((a, b) => a.fait - b.fait || parImp(a, b));
     // Occurrences futures des tâches récurrentes (affichées en pointillé) et jour férié éventuel
     const vs = F.recurrentes ? S.taches.filter(t => occurrence(t, k) && catVisible(t)) : [], fer = feries(d.getFullYear())[k];
     h += `<div class="day ${d.getMonth() !== m.getMonth() ? "out" : ""} ${k === auj() ? "today" : ""} ${d.getDay() % 6 === 0 ? "we" : ""} ${fer ? "ferie" : ""}" data-d="${k}"><span class="n">${d.getDate()}</span>${fer ? `<span class="fer">${fer}</span>` : ""}`
-      + ts.map(t => `<span class="chip ${t.fait ? "done" : ""} ${t.importance === 3 && !t.fait ? "haute" : ""}" data-id="${t.id}" style="border-color:${cat(t.categorie_id).couleur}">${t.etoile ? "⭐" : esc(cat(t.categorie_id).icone)} ${esc(t.titre)}</span>`).join("")
+      + ts.map(t => `<span class="chip ${t.fait ? "done" : ""} ${t.importance === 3 && !t.fait ? "haute" : ""}" data-id="${t.id}" style="border-color:${cat(t.categorie_id).couleur}" ${t.debut ? `title="du ${fmt(t.debut)} au ${fmt(t.echeance)}"` : ""}>${t.debut && k !== t.debut ? "↳" : t.etoile ? "⭐" : esc(cat(t.categorie_id).icone)} ${esc(t.titre)}</span>`).join("")
       + vs.map(t => `<span class="chip virt" data-id="${t.id}" style="border-color:${cat(t.categorie_id).couleur}" title="Prochaine occurrence (tâche répétée)">🔁 ${esc(t.titre)}</span>`).join("") + `</div>`;
   }
   $("#cal").innerHTML = h; ajuster();
@@ -524,14 +579,18 @@ const choisirImp = n => { S.imp = n; document.querySelectorAll("#t-imp button").
 $("#t-imp").onclick = e => { if (e.target.dataset.n) choisirImp(+e.target.dataset.n); };
 function ouvrirTache(t, date) {
   S.edit = t; $("#dt-titre").textContent = t ? "Modifier la tâche" : "Nouvelle tâche";
-  $("#t-titre").value = t?.titre ?? ""; $("#t-date").value = t?.echeance ?? date ?? ""; $("#t-cat").value = t?.categorie_id ?? "";
+  $("#t-titre").value = t?.titre ?? ""; $("#t-date").value = t?.echeance ?? date ?? ""; $("#t-debut").value = t?.debut ?? ""; $("#t-cat").value = t?.categorie_id ?? "";
   $("#t-notes").value = t?.notes ?? ""; $("#t-fait").checked = !!t?.fait; $("#t-etoile").checked = !!t?.etoile; $("#t-rec").value = t?.recurrence ?? ""; choisirImp(t?.importance ?? 2);
   $("#t-suppr").classList.toggle("hide", !t); $("#d-tache").returnValue = ""; $("#d-tache").showModal(); $("#t-titre").focus();
 }
 $("#b-tache").onclick = () => ouvrirTache(null);
 $("#d-tache").onclose = async () => {
   if ($("#d-tache").returnValue !== "ok") return;
-  const v = {titre:$("#t-titre").value.trim(), echeance:$("#t-date").value || null, categorie_id:$("#t-cat").value || null, notes:$("#t-notes").value || null, importance:S.imp, fait:$("#t-fait").checked, etoile:$("#t-etoile").checked, recurrence:$("#t-rec").value || null};
+  const v = {titre:$("#t-titre").value.trim(), echeance:$("#t-date").value || null, categorie_id:$("#t-cat").value || null, notes:$("#t-notes").value || null, importance:S.imp, fait:$("#t-fait").checked, etoile:$("#t-etoile").checked, recurrence:$("#t-rec").value || null, debut:$("#t-debut").value || null};
+  // Période : « du » seul devient l'échéance, dates inversées remises dans l'ordre, période d'un jour ramenée à une échéance simple
+  if (v.debut && !v.echeance) [v.echeance, v.debut] = [v.debut, null];
+  if (v.debut && v.debut > v.echeance) [v.debut, v.echeance] = [v.echeance, v.debut];
+  if (v.debut === v.echeance) v.debut = null;
   if (v.recurrence && !v.echeance) alert("Une tâche répétée a besoin d'une échéance : la répétition ne s'appliquera qu'une fois la date renseignée.");
   if (v.etoile && !v.echeance) alert("Sans échéance, aucun rappel mail ne sera envoyé pour cette tâche.");
   oops((S.edit ? await sb.from("taches").update(v).eq("id", S.edit.id) : await sb.from("taches").insert(v)).error);
@@ -570,14 +629,14 @@ $("#c-save").onclick = async () => {
 };
 
 // ===== Schémas : chargement et gestion =====
-let M = {liste:[], cur:null, src:null, edit:null};
+let M = {liste:[], cur:null, src:null, edit:null, sel:new Set()};
 async function chargerSchemas(id) {
   const {data, error} = await sb.from("schemas").select("*").order("created_at"); oops(error);
   M.liste = data; M.cur = data.find(s => s.id === (id ?? M.cur?.id)) ?? data[0] ?? null; M.src = null;
   $("#s-sel").innerHTML = data.map(s => `<option value="${s.id}">${esc(s.nom)}</option>`).join("") || `<option>Aucun schéma : clique sur « + Schéma »</option>`;
   if (M.cur) $("#s-sel").value = M.cur.id; dessiner(); zoomer(Z, 0, 0);
 }
-$("#s-sel").onchange = e => { M.cur = M.liste.find(s => s.id === e.target.value); M.src = null; dessiner(); };
+$("#s-sel").onchange = e => { M.cur = M.liste.find(s => s.id === e.target.value); M.src = null; M.sel.clear(); dessiner(); };
 $("#s-new").onclick = async () => {
   const nom = prompt("Nom du schéma ?"); if (!nom) return;
   const {data, error} = await sb.from("schemas").insert({nom, data:{blocs:[], liens:[]}}).select().single(); oops(error); chargerSchemas(data.id);
@@ -600,11 +659,12 @@ function dessiner() {
   const src = M.src && M.cur?.data.blocs.find(b => b.id === M.src);
   $("#s-etat").classList.toggle("hide", !src); $("#canvas").classList.toggle("liaison", !!src);
   if (src) $("#s-etat").innerHTML = `🔗 Clique maintenant sur le bloc à relier à <b>${esc(src.titre)}</b> · <b>Échap</b> ou nouveau clic sur 🔗 pour annuler`;
+  else if (M.sel.size > 1) { $("#s-etat").classList.remove("hide"); $("#s-etat").innerHTML = `⬚ <b>${M.sel.size} blocs sélectionnés</b> · glisse l'un d'eux pour tout déplacer · <b>Suppr</b> pour les supprimer · <b>Échap</b> ou clic dans le vide pour désélectionner`; }
   if (!M.cur) return $("#liens").innerHTML = "";
   M.cur.data.blocs.forEach(b => {
-    const el = document.createElement("div"); el.className = "bloc" + (M.src === b.id ? " src" : ""); el.dataset.id = b.id;
+    const el = document.createElement("div"); el.className = "bloc" + (M.src === b.id ? " src" : "") + (M.sel.has(b.id) ? " sel" : ""); el.dataset.id = b.id;
     el.style.cssText = `left:${b.x}px;top:${b.y}px;border-color:${b.couleur}`;
-    el.innerHTML = `<div class="h" style="background:${b.couleur}"><span>${esc(b.titre)}</span><button class="lk" title="Relier à un autre bloc">🔗</button><button class="del" title="Supprimer le bloc">🗑</button></div>`
+    el.innerHTML = `<div class="h" style="background:${b.couleur}"><span>${esc(b.titre)}</span>${b.items?.length ? `<button class="ecl" title="Éclater : transformer chaque ligne en bloc relié">⇊</button>` : ""}<button class="lk" title="Relier à un autre bloc">🔗</button><button class="del" title="Supprimer le bloc">🗑</button></div>`
       + (b.items?.length ? `<ul>${b.items.map(i => `<li>${esc(i)}</li>`).join("")}</ul>` : "");
     $("#canvas").appendChild(el);
   });
@@ -623,20 +683,63 @@ function traits() {
 // ===== Schémas : interactions =====
 // Déplacement à la souris ou au doigt, calé sur la grille de 20 px
 $("#canvas").onpointerdown = e => {
-  const el = e.target.closest(".bloc"); if (!el || e.target.closest(".lk, .del")) return;
-  // Déplacement converti à l'échelle du zoom
-  const b = M.cur.data.blocs.find(x => x.id === el.dataset.id), x0 = e.clientX, y0 = e.clientY, bx = b.x, by = b.y; let bouge = false;
-  el.setPointerCapture(e.pointerId);
-  el.onpointermove = m => { bouge = true; b.x = Math.max(0, bx + (m.clientX - x0) / Z); b.y = Math.max(0, by + (m.clientY - y0) / Z); el.style.left = b.x + "px"; el.style.top = b.y + "px"; traits(); };
-  el.onpointerup = () => {
-    el.onpointermove = el.onpointerup = null; if (!bouge) return;
-    b.x = Math.round(b.x / 20) * 20; b.y = Math.round(b.y / 20) * 20; el.style.left = b.x + "px"; el.style.top = b.y + "px"; traits(); sauver();
-  };
+  if (!M.cur || e.button > 0 || e.target.closest(".lk, .del, .ecl, .hit")) return;
+  const el = e.target.closest(".bloc"), cv = $("#canvas"), r = cv.getBoundingClientRect(), x0 = e.clientX, y0 = e.clientY;
+  // Zone vide : lasso de sélection (simple clic = tout désélectionner)
+  if (!el) {
+    const lx = (x0 - r.left) / Z, ly = (y0 - r.top) / Z, lasso = document.createElement("div"); lasso.id = "lasso"; let bouge = false;
+    cv.setPointerCapture(e.pointerId);
+    cv.onpointermove = m => {
+      if (!bouge && Math.hypot(m.clientX - x0, m.clientY - y0) < 5) return; if (!bouge) { bouge = true; cv.appendChild(lasso); }
+      const mx = (m.clientX - r.left) / Z, my = (m.clientY - r.top) / Z;
+      lasso.style.cssText = `left:${Math.min(lx, mx)}px;top:${Math.min(ly, my)}px;width:${Math.abs(mx - lx)}px;height:${Math.abs(my - ly)}px`;
+    };
+    cv.onpointerup = cv.onpointercancel = () => {
+      cv.onpointermove = cv.onpointerup = cv.onpointercancel = null;
+      if (bouge) {
+        const a = lasso.getBoundingClientRect(); lasso.remove(); if (!e.shiftKey) M.sel.clear();
+        cv.querySelectorAll(".bloc").forEach(b => { const q = b.getBoundingClientRect(); if (q.left < a.right && q.right > a.left && q.top < a.bottom && q.bottom > a.top) M.sel.add(b.dataset.id); });
+      } else M.sel.clear();
+      dessiner();
+    };
+    return;
+  }
+  // Maj + clic : ajouter ou retirer le bloc de la sélection
+  if (e.shiftKey) { M.sel.has(el.dataset.id) ? M.sel.delete(el.dataset.id) : M.sel.add(el.dataset.id); return dessiner(); }
+  // Déplacement (converti à l'échelle du zoom) : tout le groupe si le bloc fait partie de la sélection
+  if (!M.sel.has(el.dataset.id) && M.sel.size) { M.sel.clear(); cv.querySelectorAll(".bloc.sel").forEach(b => b.classList.remove("sel")); $("#s-etat").classList.add("hide"); }
+  const ids = M.sel.has(el.dataset.id) ? [...M.sel] : [el.dataset.id];
+  const grp = ids.map(id => ({b:M.cur.data.blocs.find(x => x.id === id), el:cv.querySelector(`.bloc[data-id="${id}"]`)})).map(g => ({...g, bx:g.b.x, by:g.b.y}));
+  let bouge = false; el.setPointerCapture(e.pointerId);
+  const placer = (dx, dy, cale) => grp.forEach(g => {
+    g.b.x = Math.max(0, g.bx + dx); g.b.y = Math.max(0, g.by + dy);
+    if (cale) { g.b.x = Math.round(g.b.x / 20) * 20; g.b.y = Math.round(g.b.y / 20) * 20; }
+    g.el.style.left = g.b.x + "px"; g.el.style.top = g.b.y + "px";
+  });
+  el.onpointermove = m => { bouge = true; placer((m.clientX - x0) / Z, (m.clientY - y0) / Z); traits(); };
+  el.onpointerup = m => { el.onpointermove = el.onpointerup = null; if (!bouge) return; placer((m.clientX - x0) / Z, (m.clientY - y0) / Z, true); traits(); sauver(); };
 };
+// Mode d'emploi repliable (choix retenu dans ce navigateur)
+const aideVisible = v => { $("#aide").classList.toggle("hide", !v); try { localStorage.setItem("agenda_aide", v ? "1" : "0"); } catch {} };
+try { aideVisible(localStorage.getItem("agenda_aide") !== "0"); } catch {}
+$("#s-aide").onclick = () => aideVisible($("#aide").classList.contains("hide"));
+// Éclater : chaque ligne du bloc devient un bloc relié, placé en dessous
+function eclater(id) {
+  const d = M.cur.data, p = d.blocs.find(b => b.id === id), el = $(`.bloc[data-id="${id}"]`), n = p.items.length;
+  if (!confirm(`Transformer les ${n} ligne(s) de « ${p.titre} » en ${n} bloc(s) relié(s) ?`)) return;
+  const pas = 180, x0 = p.x + el.offsetWidth / 2 - ((n - 1) * pas) / 2 - 65, y = Math.round((p.y + el.offsetHeight + 100) / 20) * 20;
+  M.sel.clear();
+  p.items.forEach((titre, i) => {
+    const nb = {id:crypto.randomUUID(), titre, items:[], couleur:p.couleur, x:Math.max(0, Math.round((x0 + i * pas) / 20) * 20), y};
+    d.blocs.push(nb); d.liens.push({de:p.id, vers:nb.id}); M.sel.add(nb.id);
+  });
+  p.items = []; sauver(); dessiner();
+}
 // Clic : 🔗 sélectionne la source, clic sur un 2e bloc crée le lien, clic sur un lien le supprime
 $("#canvas").onclick = e => {
   const el = e.target.closest(".bloc"), hit = e.target.closest(".hit");
   if (e.target.closest(".del")) { M.edit = M.cur.data.blocs.find(b => b.id === el.dataset.id); return supprimerBloc(); }
+  if (e.target.closest(".ecl")) return eclater(el.dataset.id);
   if (e.target.closest(".lk")) { M.src = M.src === el.dataset.id ? null : el.dataset.id; return dessiner(); }
   if (el && M.src && M.src !== el.dataset.id) {
     const l = M.cur.data.liens, a = M.src, b = el.dataset.id;
@@ -648,7 +751,7 @@ $("#canvas").onclick = e => {
 // Double-clic : modifier un bloc ou en créer un à l'endroit cliqué
 $("#canvas").ondblclick = e => {
   if (!M.cur) return alert("Crée d'abord un schéma avec « + Schéma »."); const el = e.target.closest(".bloc"), r = $("#canvas").getBoundingClientRect();
-  if (e.target.closest(".lk, .del")) return;
+  if (e.target.closest(".lk, .del, .ecl")) return;
   el ? ouvrirBloc(M.cur.data.blocs.find(b => b.id === el.dataset.id)) : ouvrirBloc(null, (e.clientX - r.left) / Z, (e.clientY - r.top) / Z);
 };
 $("#s-bloc").onclick = () => { if (!M.cur) return alert("Crée d'abord un schéma avec « + Schéma »."); const w = $("#canvas-wrap"); ouvrirBloc(null, w.scrollLeft / Z + 40, w.scrollTop / Z + 40); };
@@ -668,9 +771,55 @@ $("#d-bloc").onclose = () => {
 function supprimerBloc() {
   if (!confirm(`Supprimer le bloc « ${M.edit.titre} » et ses liens ?`)) return; const d = M.cur.data, id = M.edit.id;
   d.blocs = d.blocs.filter(b => b.id !== id); d.liens = d.liens.filter(l => l.de !== id && l.vers !== id);
-  if (M.src === id) M.src = null; if ($("#d-bloc").open) $("#d-bloc").close(); sauver(); dessiner();
+  M.sel.delete(id); if (M.src === id) M.src = null; if ($("#d-bloc").open) $("#d-bloc").close(); sauver(); dessiner();
 }
 $("#b-suppr").onclick = supprimerBloc;
+
+// ===== Notes (façon Keep) =====
+const PASTELS = ["#ffffff","#e6f6ff","#dcf5e3","#fff1d6","#fde2e3","#efe7ff","#f1f3f7"];
+let N = {liste:[], edit:null, coul:"#ffffff"};
+async function chargerNotes() {
+  const {data, error} = await sb.from("notes").select("*").order("updated_at", {ascending:false}); oops(error);
+  N.liste = data; afficherNotes();
+}
+function afficherNotes() {
+  const q = $("#n-cherche").value.trim().toLowerCase();
+  const ns = N.liste.filter(n => !q || (n.titre + " " + n.contenu).toLowerCase().includes(q));
+  const carte = n => `<div class="note" data-id="${n.id}" style="background:${n.couleur}"><button class="pin ${n.epingle ? "on" : ""}" title="${n.epingle ? "Désépingler" : "Épingler"}">📌</button>
+    ${n.titre ? `<h4>${esc(n.titre)}</h4>` : ""}<p>${esc(n.contenu)}</p><small>${new Date(n.updated_at).toLocaleDateString("fr-FR", {day:"numeric", month:"short"})}</small></div>`;
+  const ep = ns.filter(n => n.epingle), au = ns.filter(n => !n.epingle);
+  $("#notes").innerHTML = (ep.length ? `<div class="ntitre">📌 Épinglées</div><div class="grille">${ep.map(carte).join("")}</div>` : "")
+    + (au.length ? `${ep.length ? `<div class="ntitre">Autres</div>` : ""}<div class="grille">${au.map(carte).join("")}</div>` : "")
+    || `<p style="color:var(--texte_doux);text-align:center">${q ? "Aucune note ne correspond." : "Aucune note pour l'instant."}</p>`;
+}
+$("#n-cherche").oninput = afficherNotes;
+// Ajout rapide depuis la zone du haut (bouton ou Ctrl + Entrée)
+async function ajouterNote() {
+  const titre = $("#n-titre").value.trim(), contenu = $("#n-texte").value.trim(); if (!titre && !contenu) return $("#n-texte").focus();
+  oops((await sb.from("notes").insert({titre, contenu})).error); $("#n-titre").value = $("#n-texte").value = ""; chargerNotes();
+}
+$("#n-ajout").onclick = ajouterNote;
+$("#n-texte").onkeydown = e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); ajouterNote(); } };
+$("#n-titre").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); $("#n-texte").focus(); } };
+// Épingler depuis la carte, ou ouvrir la note
+$("#notes").onclick = async e => {
+  const el = e.target.closest(".note"); if (!el) return; const n = N.liste.find(x => x.id === el.dataset.id);
+  if (e.target.closest(".pin")) { oops((await sb.from("notes").update({epingle:!n.epingle}).eq("id", n.id)).error); n.epingle = !n.epingle; return afficherNotes(); }
+  N.edit = n; $("#dn-titre").value = n.titre; $("#dn-texte").value = n.contenu; $("#dn-pin").checked = n.epingle; choisirPastel(n.couleur);
+  $("#d-note").returnValue = ""; $("#d-note").showModal();
+};
+const choisirPastel = c => { N.coul = c; document.querySelectorAll("#dn-coul button").forEach(b => b.classList.toggle("on", b.dataset.c === c)); };
+$("#dn-coul").innerHTML = PASTELS.map(c => `<button type="button" data-c="${c}" style="background:${c}"></button>`).join("");
+$("#dn-coul").onclick = e => { if (e.target.dataset.c) choisirPastel(e.target.dataset.c); };
+$("#d-note").onclose = async () => {
+  if ($("#d-note").returnValue !== "ok") return;
+  oops((await sb.from("notes").update({titre:$("#dn-titre").value.trim(), contenu:$("#dn-texte").value, couleur:N.coul, epingle:$("#dn-pin").checked, updated_at:new Date().toISOString()}).eq("id", N.edit.id)).error);
+  chargerNotes();
+};
+$("#dn-suppr").onclick = async () => {
+  if (!confirm("Supprimer cette note ?")) return;
+  oops((await sb.from("notes").delete().eq("id", N.edit.id)).error); $("#d-note").close(); chargerNotes();
+};
 
 // ===== Schémas : zoom (boutons, Ctrl + molette ou pincement du pavé tactile) =====
 let Z = 1;
