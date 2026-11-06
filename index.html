@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Agenda | DATAfutée</title>
+<link rel="icon" href="https://bbellier.github.io/mydatafutee/img/favicon.ico">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ===== Couleurs DATAfutée ===== */
+:root{--nuit:#121935;--bleu:#15acfd;--bleu_clair:#e6f6ff;--bleu_fonce:#0a5f8c;--texte_doux:#4a5170;--fond_carte:#f6f8fc;--blanc:#fff;--trait:#dde3ee;--gris:#c3cad8;--alerte:#e5484d;--haut_nav:56px;--haut_barre:58px}
+/* ===== Base ===== */
+*{box-sizing:border-box}
+body{margin:0;background:var(--blanc);color:var(--nuit);font:500 15px/1.5 Quicksand,sans-serif}
+h1,h2,h3{margin:0;font-weight:700}
+h3{border-left:4px solid var(--bleu);padding-left:.6rem;font-size:1.1rem}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--trait);background:var(--blanc);border-radius:8px;padding:.4rem .85rem;font-weight:600;transition:.2s}
+button:hover{border-color:var(--bleu);color:var(--bleu_fonce)}
+button.prim{background:var(--bleu);border-color:var(--bleu);color:var(--nuit)}
+button.prim:hover{background:var(--nuit);border-color:var(--nuit);color:var(--bleu)}
+button.dang{color:var(--alerte)}
+input,select,textarea{width:100%;padding:.5rem .6rem;border:1px solid var(--trait);border-radius:8px;background:var(--blanc)}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--bleu);outline-offset:-1px}
+input[type=checkbox]{width:auto;accent-color:var(--bleu)}
+label{display:block;font-size:.85rem;color:var(--texte_doux);margin:.7rem 0 .2rem;font-weight:600}
+.hide{display:none!important}
+/* ===== Logo (partie bleu nuit uniquement) ===== */
+.logo{display:block;overflow:hidden;height:36px}
+.logo img{height:42px;display:block}
+/* ===== Connexion ===== */
+#login{min-height:100vh;display:grid;place-items:center;padding:16px;background:var(--nuit)}
+#login .logo{height:80px;margin:0 auto 1.5rem;width:fit-content}
+#login .logo img{height:94px}
+#login form{background:var(--blanc);padding:2rem;border-top:3px solid var(--bleu);border-radius:0 0 12px 12px;width:min(360px,100%)}
+#login .err{color:var(--alerte);font-size:.85rem;min-height:1.2em;margin:.5rem 0}
+/* ===== Barre de navigation et onglets ===== */
+nav{position:sticky;top:0;z-index:10;background:var(--nuit);display:flex;align-items:stretch;gap:1rem;padding:0 16px;height:var(--haut_nav)}
+nav .logo{align-self:center}
+.onglets{display:flex;gap:.2rem;margin-right:auto}
+.onglets button{background:none;border:0;border-bottom:3px solid transparent;border-radius:0;color:#ffffffb0;padding:0 1rem}
+.onglets button:hover{color:var(--blanc);border-bottom-color:#ffffff40}
+.onglets button.on{color:var(--bleu);border-bottom-color:var(--bleu)}
+#b-out{align-self:center;background:none;border-color:#ffffff40;color:var(--blanc)}
+#b-out:hover{background:var(--bleu);color:var(--nuit)}
+@media (max-width:560px){.barre .clavier{display:none}#auj{margin-right:auto}nav{gap:.4rem}.onglets button{padding:0 .5rem}nav .logo img{height:36px}nav .logo{height:31px}}
+/* ===== Barre d'outils de l'agenda ===== */
+.barre{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;padding:10px 16px;min-height:var(--haut_barre)}
+.barre h2{min-width:170px;text-align:center;text-transform:capitalize;font-size:1.3rem}
+.barre .clavier{font-size:.75rem;color:var(--texte_doux);margin-right:auto}
+.barre .clavier kbd{border:1px solid var(--trait);border-bottom-width:2px;border-radius:4px;padding:0 .3rem;font:inherit;font-weight:700}
+/* ===== Mise en page : l'agenda tient dans la hauteur de l'écran ===== */
+main{display:grid;grid-template-columns:2fr 1fr;gap:16px;padding:0 16px 12px;height:calc(100vh - var(--haut_nav) - var(--haut_barre));min-height:460px}
+.panel{background:var(--fond_carte);border-top:3px solid var(--bleu);border-radius:0 0 12px 12px;padding:10px 12px 12px;display:flex;flex-direction:column;min-height:0}
+@media (max-width:860px){main{grid-template-columns:1fr;height:auto}.cal{grid-template-rows:auto repeat(6,minmax(64px,auto))}#liste{overflow:visible}}
+/* ===== Calendrier ===== */
+.cal{flex:1;min-height:0;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));grid-template-rows:auto repeat(6,minmax(0,1fr));gap:4px}
+.dow{font-size:.72rem;color:var(--texte_doux);text-align:center;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.day{position:relative;min-height:0;background:var(--blanc);border:1px solid var(--trait);border-radius:8px;padding:3px 4px;cursor:pointer;overflow:hidden;transition:border-color .2s}
+.day:hover{border-color:var(--bleu)}
+.day.out{opacity:.35}
+.day .n{font-size:.78rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;width:1.45rem;height:1.45rem;border-radius:50%}
+.day.today{background:var(--bleu_clair);border-color:var(--bleu)}
+.day.today .n{background:var(--nuit);color:var(--bleu)}
+.chip{display:block;font-size:.7rem;font-weight:600;line-height:1.35;padding:0 5px;margin-top:2px;border-radius:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:3px solid;background:var(--fond_carte)}
+.chip.haute{background:var(--nuit);color:var(--blanc);font-weight:700}
+.chip.done{text-decoration:line-through;opacity:.5}
+.more{position:absolute;top:4px;right:5px;font-size:.68rem;font-weight:700;color:var(--bleu_fonce);background:var(--bleu_clair);border-radius:10px;padding:0 .4rem}
+@media (max-width:560px){.day{min-height:56px}.chip{font-size:0;padding:0;height:0;border-left:0;border-top:5px solid;border-radius:3px}}
+/* ===== To-do ===== */
+.filt{display:flex;gap:.4rem;flex-wrap:wrap;margin:.6rem 0 .3rem}
+.filt select{flex:1;min-width:110px;padding:.35rem .5rem}
+#liste{flex:1;min-height:0;overflow:auto;padding-right:2px}
+.task{display:flex;gap:.5rem;align-items:flex-start;padding:.45rem .6rem;border-radius:0 8px 8px 0;border:1px solid var(--trait);border-left:4px solid;margin-bottom:6px;background:var(--blanc);cursor:pointer;transition:transform .2s}
+.task:hover{transform:translateX(2px)}
+.task input{margin-top:.3rem}
+.task .t{flex:1;min-width:0}
+.task .m{font-size:.75rem;color:var(--texte_doux)}
+.task.done .t>span{text-decoration:line-through;opacity:.55}
+.star{border:0;background:none;padding:0 .1rem;font-size:1.15rem;line-height:1;color:var(--gris)}
+.star.on{color:var(--bleu)}
+.star:hover{color:var(--bleu);border:0}
+.late{color:var(--alerte);font-weight:700}
+.imp{letter-spacing:-1px;color:var(--bleu)}
+.imp i{font-style:normal;color:var(--gris)}
+/* ===== Encadré des échéances suivies ===== */
+#alerte .box{background:var(--nuit);color:var(--blanc);border-radius:12px;padding:.6rem .9rem;margin-bottom:.7rem;font-size:.82rem;max-height:9.5rem;overflow:auto}
+#alerte .box strong{color:var(--bleu);display:block;margin-bottom:.2rem}
+#alerte .late{color:#ff8a8d}
+/* ===== Fenêtres ===== */
+dialog{border:0;border-top:3px solid var(--bleu);border-radius:0 0 12px 12px;background:var(--blanc);color:var(--nuit);width:min(440px,calc(100% - 32px));padding:1.4rem}
+dialog::backdrop{background:#121935b0}
+.row{display:flex;gap:.5rem}.row>*{flex:1}
+.acts{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1.2rem}
+.acts .sp{flex:1}
+.opt{display:flex;gap:.5rem;align-items:center;background:var(--bleu_clair);color:var(--bleu_fonce);border-radius:8px;padding:.5rem .7rem;margin-top:.8rem}
+.opt input{margin:0}
+.niveaux{display:flex;gap:.4rem}
+.niveaux button{flex:1}
+.niveaux button.on{background:var(--nuit);border-color:var(--nuit);color:var(--bleu)}
+.nuancier{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.nuancier button{width:26px;height:26px;padding:0;border-radius:50%;border:2px solid var(--blanc);box-shadow:0 0 0 1px var(--trait)}
+.nuancier button:hover{box-shadow:0 0 0 2px var(--nuit)}
+.catline{display:flex;align-items:center;gap:.5rem;padding:.35rem .5rem;border:1px solid var(--trait);border-left:4px solid;border-radius:0 8px 8px 0;margin-bottom:5px}
+.catline span{flex:1}
+.emojis{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.emojis button{padding:.15rem .35rem}
+/* ===== Schémas ===== */
+.sbar{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;padding:10px 16px}
+.sbar select{width:auto;min-width:160px}
+.sbar .sp{flex:1}
+.aide{display:flex;flex-wrap:wrap;gap:.4rem;padding:0 16px 10px}
+.aide span{background:var(--bleu_clair);color:var(--bleu_fonce);border-radius:20px;padding:.2rem .8rem;font-size:.8rem}
+.aide b{color:var(--nuit);margin-right:.3rem}
+#s-etat{margin:0 16px 10px;background:var(--nuit);color:var(--blanc);border-radius:8px;padding:.45rem .9rem;font-size:.85rem}
+#s-etat b{color:var(--bleu)}
+#canvas-wrap{margin:0 16px 12px;height:calc(100vh - var(--haut_nav) - 112px);min-height:360px;overflow:auto;border-top:3px solid var(--bleu);border-radius:0 0 12px 12px;background:var(--fond_carte) radial-gradient(#c9d2e3 1px,transparent 1px) 0 0/20px 20px}
+#canvas{position:relative;width:2400px;height:1600px}
+#liens{position:absolute;inset:0;width:100%;height:100%}
+#liens path{fill:none;stroke:var(--nuit);stroke-width:2;opacity:.45}
+#liens path.hit{stroke:transparent;stroke-width:14;cursor:pointer;opacity:1}
+#liens path.hit:hover{stroke:#e5484d77}
+.bloc{position:absolute;min-width:130px;max-width:230px;background:var(--blanc);border:2px solid;border-radius:10px;touch-action:none;user-select:none;cursor:grab;box-shadow:0 4px 12px #12193522;overflow:hidden}
+.bloc .h{padding:.4rem .65rem;color:#fff;font-weight:700;font-size:.95rem;display:flex;gap:.4rem;align-items:center}
+.bloc .h span{flex:1}
+.bloc .lk{background:#ffffff30;border:0;padding:.05rem .3rem;border-radius:6px}
+.bloc .lk:hover{background:#ffffff70}
+.bloc ul{margin:0;padding:.35rem .65rem;list-style:none;font-size:.85rem}
+.bloc li+li{border-top:1px dashed var(--trait)}
+.bloc.src{outline:3px dashed var(--bleu);outline-offset:3px}
+#canvas.liaison .bloc:not(.src){cursor:crosshair}
+</style>
+</head>
+<body>
+
+<!-- ===== Écran de connexion ===== -->
+<section id="login">
+  <div>
+  <span class="logo"><img src="https://bbellier.github.io/mydatafutee/img/logo.png" alt="DATAfutée"></span>
+  <form id="f-login">
+    <h3>Agenda</h3>
+    <label>Email</label><input id="l-mail" type="email" required autocomplete="username">
+    <label>Mot de passe</label><input id="l-mdp" type="password" required autocomplete="current-password">
+    <p class="err" id="l-err"></p>
+    <button class="prim" style="width:100%">Se connecter</button>
+  </form>
+  </div>
+</section>
+
+<!-- ===== Application ===== -->
+<section id="app" class="hide">
+  <nav>
+    <span class="logo"><img src="https://bbellier.github.io/mydatafutee/img/logo.png" alt="DATAfutée"></span>
+    <div class="onglets"><button class="on" data-v="agenda">📅 Agenda</button><button data-v="schemas">🧠 Schémas</button></div>
+    <button id="b-out" title="Déconnexion">⏻</button>
+  </nav>
+
+  <!-- ===== Onglet Agenda ===== -->
+  <div id="v-agenda">
+    <div class="barre">
+      <button id="prev" title="Mois précédent (←)">‹</button><h2 id="titre-mois"></h2><button id="next" title="Mois suivant (→)">›</button>
+      <button id="auj">Aujourd'hui</button>
+      <span class="clavier">ou flèches <kbd>←</kbd> <kbd>→</kbd> du clavier</span>
+      <button id="b-cats">Catégories</button>
+      <button class="prim" id="b-tache">+ Tâche</button>
+    </div>
+    <main>
+      <div class="panel"><div class="cal" id="cal"></div></div>
+      <div class="panel">
+        <div id="alerte"></div>
+        <h3>À faire</h3>
+        <div class="filt">
+          <select id="f-cat"></select>
+          <select id="f-tri"><option value="date">Tri : échéance</option><option value="imp">Tri : importance</option></select>
+        </div>
+        <label style="margin:0 0 .4rem"><input type="checkbox" id="f-done"> Afficher les tâches terminées</label>
+        <div id="liste"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ===== Onglet Schémas ===== -->
+  <div id="v-schemas" class="hide">
+    <div class="sbar">
+      <select id="s-sel"></select>
+      <button id="s-new">+ Schéma</button><button id="s-ren">Renommer</button><button class="dang" id="s-del">Supprimer</button>
+      <span class="sp"></span><button class="prim" id="s-bloc">+ Bloc</button>
+    </div>
+    <div class="aide">
+      <span><b>➕ Ajouter un bloc</b>double-clic dans une zone vide</span>
+      <span><b>✏️ Modifier un bloc</b>double-clic dessus</span>
+      <span><b>✋ Déplacer</b>cliquer-glisser le bloc</span>
+      <span><b>🔗 Relier</b>clic sur 🔗 d'un bloc, puis clic sur l'autre bloc</span>
+      <span><b>✂️ Supprimer un lien</b>clic sur le trait</span>
+    </div>
+    <div id="s-etat" class="hide"></div>
+    <div id="canvas-wrap"><div id="canvas"><svg id="liens"></svg></div></div>
+  </div>
+</section>
+
+<!-- ===== Fenêtre bloc ===== -->
+<dialog id="d-bloc"><form method="dialog">
+  <h3>Bloc</h3>
+  <div class="row">
+    <div style="flex:3"><label>Titre</label><input id="b-titre" required></div>
+    <div><label>Couleur</label><input id="b-coul" type="color" style="height:2.4rem;padding:2px"></div>
+  </div>
+  <div class="nuancier" data-cible="#b-coul"></div>
+  <label>Éléments (un par ligne, facultatif)</label><textarea id="b-items" rows="4"></textarea>
+  <div class="acts"><button type="button" class="dang" id="b-suppr">Supprimer</button><span class="sp"></span><button value="cancel" formnovalidate>Annuler</button><button class="prim" value="ok">Enregistrer</button></div>
+</form></dialog>
+
+<!-- ===== Fenêtre tâche ===== -->
+<dialog id="d-tache"><form method="dialog" id="f-tache">
+  <h3 id="dt-titre">Tâche</h3>
+  <label>Titre</label><input id="t-titre" required>
+  <div class="row">
+    <div><label>Échéance</label><input id="t-date" type="date"></div>
+    <div><label>Catégorie</label><select id="t-cat"></select></div>
+  </div>
+  <label>Importance</label>
+  <div class="niveaux" id="t-imp"><button type="button" data-n="1">● Basse</button><button type="button" data-n="2">●● Moyenne</button><button type="button" data-n="3">●●● Haute</button></div>
+  <label>Notes</label><textarea id="t-notes" rows="3"></textarea>
+  <label class="opt"><input type="checkbox" id="t-etoile"> ⭐ Rappel par mail 7 jours et 1 jour avant l'échéance</label>
+  <label><input type="checkbox" id="t-fait"> Terminée</label>
+  <div class="acts"><button type="button" class="dang" id="t-suppr">Supprimer</button><span class="sp"></span><button value="cancel" formnovalidate>Annuler</button><button class="prim" value="ok">Enregistrer</button></div>
+</form></dialog>
+
+<!-- ===== Fenêtre catégories ===== -->
+<dialog id="d-cats"><form method="dialog" id="f-cat-form">
+  <h3>Catégories</h3>
+  <div id="cat-liste" style="margin:.6rem 0"></div>
+  <h3 id="c-mode" style="font-size:1rem">Nouvelle catégorie</h3>
+  <div class="row">
+    <div style="flex:3"><label>Nom</label><input id="c-nom"></div>
+    <div><label>Icône</label><input id="c-ico" maxlength="4" value="📌"></div>
+    <div><label>Couleur</label><input id="c-coul" type="color" value="#15acfd" style="height:2.4rem;padding:2px"></div>
+  </div>
+  <div class="nuancier" data-cible="#c-coul"></div>
+  <div class="emojis" id="emojis"></div>
+  <div class="acts"><button type="button" id="c-reset">Vider</button><span class="sp"></span><button value="cancel" formnovalidate>Fermer</button><button type="button" class="prim" id="c-save">Ajouter</button></div>
+</form></dialog>
+
+<script>
+// ===== Configuration Supabase (Project Settings > API) =====
+const SUPABASE_URL = "https://rlmgnixsaiweckkknscu.supabase.co";
+const SUPABASE_KEY = "sb_publishable_PWnkgnJS1A6jrLdEiTCn6g_buV90sTJ";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ===== Utilitaires =====
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const auj = () => iso(new Date());
+const fmt = s => s ? new Date(s+"T12:00").toLocaleDateString("fr-FR",{day:"numeric",month:"short"}) : "";
+const points = n => `<span class="imp" title="Importance">${"●".repeat(n)}<i>${"●".repeat(3 - n)}</i></span>`;
+const parDate = (a, b) => (a.echeance ?? "9").localeCompare(b.echeance ?? "9");
+const parImp = (a, b) => (b.importance ?? 2) - (a.importance ?? 2);
+const EMOJIS = ["📌","💼","🏠","🚴","🏃","📚","🔬","💶","🛒","❤️","🎉","✈️","🐟","📞","⚠️","⭐"];
+// Couleurs proposées : DATAfutée d'abord, puis quelques teintes complémentaires
+const COULEURS = ["#15acfd","#121935","#0a5f8c","#4a5170","#22c55e","#f59e0b","#e5484d","#8b5cf6"];
+let S = {cats:[], taches:[], mois:new Date(new Date().getFullYear(), new Date().getMonth(), 1), edit:null, editCat:null, imp:2};
+const cat = id => S.cats.find(c => c.id === id) || {nom:"Sans catégorie", couleur:"#9aa5a8", icone:"•"};
+const oops = e => { if (e) { alert("Erreur : " + e.message); throw e; } };
+
+// ===== Authentification =====
+$("#f-login").onsubmit = async e => {
+  e.preventDefault(); $("#l-err").textContent = "";
+  const {error} = await sb.auth.signInWithPassword({email:$("#l-mail").value, password:$("#l-mdp").value});
+  if (error) $("#l-err").textContent = "Identifiants incorrects.";
+};
+$("#b-out").onclick = () => sb.auth.signOut();
+sb.auth.onAuthStateChange((_, session) => {
+  $("#login").classList.toggle("hide", !!session); $("#app").classList.toggle("hide", !session);
+  if (session) setTimeout(charger, 0);
+});
+
+// ===== Onglets Agenda / Schémas =====
+const vue = () => $(".onglets .on").dataset.v;
+document.querySelectorAll(".onglets button").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".onglets button").forEach(x => x.classList.toggle("on", x === b));
+  $("#v-agenda").classList.toggle("hide", b.dataset.v !== "agenda"); $("#v-schemas").classList.toggle("hide", b.dataset.v !== "schemas");
+  b.dataset.v === "schemas" ? chargerSchemas() : calendrier();
+});
+
+// ===== Clavier : ← → changent de mois, Échap annule une liaison =====
+document.addEventListener("keydown", e => {
+  if (document.querySelector("dialog[open]") || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || $("#app").classList.contains("hide")) return;
+  if (vue() === "agenda" && e.key === "ArrowLeft") { e.preventDefault(); changerMois(-1); }
+  if (vue() === "agenda" && e.key === "ArrowRight") { e.preventDefault(); changerMois(1); }
+  if (vue() === "schemas" && e.key === "Escape" && M.src) { M.src = null; dessiner(); }
+});
+
+// ===== Nuanciers de couleurs (catégories et blocs) =====
+document.querySelectorAll(".nuancier").forEach(n => {
+  n.innerHTML = COULEURS.map(c => `<button type="button" style="background:${c}" data-c="${c}" title="${c}"></button>`).join("");
+  n.onclick = e => { if (e.target.dataset.c) $(n.dataset.cible).value = e.target.dataset.c; };
+});
+
+// ===== Données =====
+async function charger() {
+  const [c, t] = await Promise.all([
+    sb.from("categories").select("*").order("nom"),
+    sb.from("taches").select("*").order("echeance", {nullsFirst:false})
+  ]);
+  oops(c.error); oops(t.error);
+  S.cats = c.data; S.taches = t.data; rendu();
+}
+
+// ===== Rendu général =====
+function rendu() {
+  // Listes déroulantes de catégories
+  const opts = S.cats.map(c => `<option value="${c.id}">${esc(c.icone)} ${esc(c.nom)}</option>`).join("");
+  const fc = $("#f-cat").value;
+  $("#f-cat").innerHTML = `<option value="">Toutes catégories</option>` + opts; $("#f-cat").value = fc;
+  $("#t-cat").innerHTML = `<option value="">Sans catégorie</option>` + opts;
+  calendrier(); liste(); alerte();
+}
+
+// ===== Encadré : tâches étoilées en retard ou dues sous 7 jours =====
+function alerte() {
+  const lim = iso(new Date(Date.now() + 7 * 864e5));
+  const ts = S.taches.filter(t => t.etoile && !t.fait && t.echeance && t.echeance <= lim).sort(parDate);
+  $("#alerte").innerHTML = ts.length ? `<div class="box"><strong>⭐ Échéances suivies</strong>${ts.map(t => `${esc(cat(t.categorie_id).icone)} ${esc(t.titre)} · <span class="${t.echeance < auj() ? "late" : ""}">${t.echeance < auj() ? "en retard, " : ""}${fmt(t.echeance)}</span>`).join("<br>")}</div>` : "";
+}
+
+// ===== Calendrier mensuel (semaine du lundi) =====
+function calendrier() {
+  const m = S.mois, debut = new Date(m); debut.setDate(1 - ((m.getDay() + 6) % 7));
+  $("#titre-mois").textContent = m.toLocaleDateString("fr-FR", {month:"long", year:"numeric"});
+  let h = ["Lun","Mar","Mer","Jeu","Ven","Sam","Dim"].map(d => `<div class="dow">${d}</div>`).join("");
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(debut); d.setDate(debut.getDate() + i); const k = iso(d);
+    // Tâches du jour : les plus importantes en premier, les terminées en dernier
+    const ts = S.taches.filter(t => t.echeance === k).sort((a, b) => a.fait - b.fait || parImp(a, b));
+    h += `<div class="day ${d.getMonth() !== m.getMonth() ? "out" : ""} ${k === auj() ? "today" : ""}" data-d="${k}"><div class="n">${d.getDate()}</div>`
+      + ts.map(t => `<span class="chip ${t.fait ? "done" : ""} ${t.importance === 3 && !t.fait ? "haute" : ""}" data-id="${t.id}" style="border-color:${cat(t.categorie_id).couleur}">${t.etoile ? "⭐" : esc(cat(t.categorie_id).icone)} ${esc(t.titre)}</span>`).join("") + `</div>`;
+  }
+  $("#cal").innerHTML = h; ajuster();
+}
+// Masque les tâches qui débordent d'une case et affiche « +n » à la place
+function ajuster() {
+  document.querySelectorAll("#cal .day").forEach(d => {
+    const chips = [...d.querySelectorAll(".chip")]; let n = 0;
+    while (chips.length && d.scrollHeight > d.clientHeight + 1) { chips.pop().classList.add("hide"); n++; }
+    if (n) d.insertAdjacentHTML("beforeend", `<span class="more">+${n}</span>`);
+  });
+}
+let tRedim; window.addEventListener("resize", () => { clearTimeout(tRedim); tRedim = setTimeout(() => vue() === "agenda" && calendrier(), 150); });
+$("#cal").onclick = e => {
+  const chip = e.target.closest(".chip"), day = e.target.closest(".day");
+  if (chip) ouvrirTache(S.taches.find(t => t.id === chip.dataset.id)); else if (day) ouvrirTache(null, day.dataset.d);
+};
+const changerMois = n => { S.mois.setMonth(S.mois.getMonth() + n); calendrier(); };
+$("#prev").onclick = () => changerMois(-1);
+$("#next").onclick = () => changerMois(1);
+$("#auj").onclick = () => { S.mois = new Date(new Date().getFullYear(), new Date().getMonth(), 1); calendrier(); };
+
+// ===== To-do list =====
+function liste() {
+  const fc = $("#f-cat").value, done = $("#f-done").checked, tri = $("#f-tri").value;
+  const ts = S.taches.filter(t => (!fc || t.categorie_id === fc) && (done || !t.fait))
+    .sort((a, b) => tri === "imp" ? parImp(a, b) || parDate(a, b) : parDate(a, b) || parImp(a, b));
+  $("#liste").innerHTML = ts.map(t => { const c = cat(t.categorie_id), late = !t.fait && t.echeance && t.echeance < auj();
+    return `<div class="task ${t.fait ? "done" : ""}" data-id="${t.id}" style="border-left-color:${c.couleur}">
+      <input type="checkbox" ${t.fait ? "checked" : ""}>
+      <div class="t"><span>${esc(c.icone)} ${esc(t.titre)}</span>
+      <div class="m">${points(t.importance ?? 2)} ${esc(c.nom)}${t.echeance ? ` · <span class="${late ? "late" : ""}">${fmt(t.echeance)}</span>` : ""}</div></div>
+      <button class="star ${t.etoile ? "on" : ""}" title="Rappel par mail 7 j et 1 j avant">${t.etoile ? "★" : "☆"}</button></div>`;
+  }).join("") || `<p class="m" style="color:var(--texte_doux)">Rien à faire 🎉</p>`;
+}
+["#f-cat", "#f-tri", "#f-done"].forEach(s => $(s).onchange = liste);
+$("#liste").onclick = async e => {
+  const el = e.target.closest(".task"); if (!el) return; const t = S.taches.find(x => x.id === el.dataset.id);
+  // Étoile : basculer le rappel mail ; case à cocher : basculer « fait » ; sinon : ouvrir la tâche
+  if (e.target.closest(".star")) {
+    if (!t.etoile && !t.echeance) return alert("Ajoute d'abord une échéance à cette tâche pour recevoir un rappel.");
+    oops((await sb.from("taches").update({etoile:!t.etoile}).eq("id", t.id)).error); t.etoile = !t.etoile; rendu();
+  }
+  else if (e.target.type === "checkbox") { oops((await sb.from("taches").update({fait:!t.fait}).eq("id", t.id)).error); t.fait = !t.fait; rendu(); }
+  else ouvrirTache(t);
+};
+
+// ===== Fenêtre tâche (création / modification) =====
+const choisirImp = n => { S.imp = n; document.querySelectorAll("#t-imp button").forEach(b => b.classList.toggle("on", +b.dataset.n === n)); };
+$("#t-imp").onclick = e => { if (e.target.dataset.n) choisirImp(+e.target.dataset.n); };
+function ouvrirTache(t, date) {
+  S.edit = t; $("#dt-titre").textContent = t ? "Modifier la tâche" : "Nouvelle tâche";
+  $("#t-titre").value = t?.titre ?? ""; $("#t-date").value = t?.echeance ?? date ?? ""; $("#t-cat").value = t?.categorie_id ?? "";
+  $("#t-notes").value = t?.notes ?? ""; $("#t-fait").checked = !!t?.fait; $("#t-etoile").checked = !!t?.etoile; choisirImp(t?.importance ?? 2);
+  $("#t-suppr").classList.toggle("hide", !t); $("#d-tache").returnValue = ""; $("#d-tache").showModal(); $("#t-titre").focus();
+}
+$("#b-tache").onclick = () => ouvrirTache(null);
+$("#d-tache").onclose = async () => {
+  if ($("#d-tache").returnValue !== "ok") return;
+  const v = {titre:$("#t-titre").value.trim(), echeance:$("#t-date").value || null, categorie_id:$("#t-cat").value || null, notes:$("#t-notes").value || null, importance:S.imp, fait:$("#t-fait").checked, etoile:$("#t-etoile").checked};
+  if (v.etoile && !v.echeance) alert("Sans échéance, aucun rappel mail ne sera envoyé pour cette tâche.");
+  oops((S.edit ? await sb.from("taches").update(v).eq("id", S.edit.id) : await sb.from("taches").insert(v)).error); charger();
+};
+$("#t-suppr").onclick = async () => {
+  if (!confirm("Supprimer cette tâche ?")) return;
+  oops((await sb.from("taches").delete().eq("id", S.edit.id)).error); $("#d-tache").close(); charger();
+};
+
+// ===== Fenêtre catégories =====
+$("#emojis").innerHTML = EMOJIS.map(e => `<button type="button">${e}</button>`).join("");
+$("#emojis").onclick = e => { if (e.target.tagName === "BUTTON") $("#c-ico").value = e.target.textContent; };
+function listeCats() {
+  $("#cat-liste").innerHTML = S.cats.map(c => `<div class="catline" style="border-left-color:${c.couleur}"><span>${esc(c.icone)} ${esc(c.nom)}</span>
+    <button type="button" data-e="${c.id}">✏️</button><button type="button" class="dang" data-s="${c.id}">✕</button></div>`).join("") || `<p style="color:var(--texte_doux)">Aucune catégorie.</p>`;
+}
+function formCat(c) {
+  S.editCat = c ?? null; $("#c-mode").textContent = c ? "Modifier la catégorie" : "Nouvelle catégorie"; $("#c-save").textContent = c ? "Enregistrer" : "Ajouter";
+  $("#c-nom").value = c?.nom ?? ""; $("#c-coul").value = c?.couleur ?? "#15acfd"; $("#c-ico").value = c?.icone ?? "📌";
+}
+$("#b-cats").onclick = () => { listeCats(); formCat(); $("#d-cats").showModal(); };
+$("#c-reset").onclick = () => formCat();
+$("#cat-liste").onclick = async e => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.e) formCat(S.cats.find(c => c.id === b.dataset.e));
+  if (b.dataset.s && confirm("Supprimer la catégorie ? Ses tâches seront conservées sans catégorie.")) { oops((await sb.from("categories").delete().eq("id", b.dataset.s)).error); await charger(); listeCats(); }
+};
+$("#c-save").onclick = async () => {
+  const v = {nom:$("#c-nom").value.trim(), couleur:$("#c-coul").value, icone:$("#c-ico").value.trim() || "📌"};
+  if (!v.nom) return $("#c-nom").focus();
+  oops((S.editCat ? await sb.from("categories").update(v).eq("id", S.editCat.id) : await sb.from("categories").insert(v)).error);
+  await charger(); listeCats(); formCat();
+};
+
+// ===== Schémas : chargement et gestion =====
+let M = {liste:[], cur:null, src:null, edit:null};
+async function chargerSchemas(id) {
+  const {data, error} = await sb.from("schemas").select("*").order("created_at"); oops(error);
+  M.liste = data; M.cur = data.find(s => s.id === (id ?? M.cur?.id)) ?? data[0] ?? null; M.src = null;
+  $("#s-sel").innerHTML = data.map(s => `<option value="${s.id}">${esc(s.nom)}</option>`).join("") || `<option>Aucun schéma : clique sur « + Schéma »</option>`;
+  if (M.cur) $("#s-sel").value = M.cur.id; dessiner();
+}
+$("#s-sel").onchange = e => { M.cur = M.liste.find(s => s.id === e.target.value); M.src = null; dessiner(); };
+$("#s-new").onclick = async () => {
+  const nom = prompt("Nom du schéma ?"); if (!nom) return;
+  const {data, error} = await sb.from("schemas").insert({nom, data:{blocs:[], liens:[]}}).select().single(); oops(error); chargerSchemas(data.id);
+};
+$("#s-ren").onclick = async () => {
+  if (!M.cur) return; const nom = prompt("Nouveau nom ?", M.cur.nom); if (!nom) return;
+  oops((await sb.from("schemas").update({nom}).eq("id", M.cur.id)).error); chargerSchemas();
+};
+$("#s-del").onclick = async () => {
+  if (!M.cur || !confirm(`Supprimer le schéma « ${M.cur.nom} » ?`)) return;
+  oops((await sb.from("schemas").delete().eq("id", M.cur.id)).error); M.cur = null; chargerSchemas();
+};
+// Sauvegarde différée : 0,6 s après la dernière modification du schéma
+const sauver = () => { const s = M.cur; clearTimeout(s._t); s._t = setTimeout(async () => oops((await sb.from("schemas").update({data:s.data}).eq("id", s.id)).error), 600); };
+
+// ===== Schémas : dessin des blocs et des liens =====
+function dessiner() {
+  $("#canvas").querySelectorAll(".bloc").forEach(e => e.remove());
+  // Bandeau d'état pendant une liaison
+  const src = M.src && M.cur?.data.blocs.find(b => b.id === M.src);
+  $("#s-etat").classList.toggle("hide", !src); $("#canvas").classList.toggle("liaison", !!src);
+  if (src) $("#s-etat").innerHTML = `🔗 Clique maintenant sur le bloc à relier à <b>${esc(src.titre)}</b> · <b>Échap</b> ou nouveau clic sur 🔗 pour annuler`;
+  if (!M.cur) return $("#liens").innerHTML = "";
+  M.cur.data.blocs.forEach(b => {
+    const el = document.createElement("div"); el.className = "bloc" + (M.src === b.id ? " src" : ""); el.dataset.id = b.id;
+    el.style.cssText = `left:${b.x}px;top:${b.y}px;border-color:${b.couleur}`;
+    el.innerHTML = `<div class="h" style="background:${b.couleur}"><span>${esc(b.titre)}</span><button class="lk" title="Relier à un autre bloc">🔗</button></div>`
+      + (b.items?.length ? `<ul>${b.items.map(i => `<li>${esc(i)}</li>`).join("")}</ul>` : "");
+    $("#canvas").appendChild(el);
+  });
+  traits();
+}
+function traits() {
+  // Courbe entre les centres des deux blocs (trait visible + zone de clic élargie)
+  const centre = id => { const e = $(`.bloc[data-id="${id}"]`); return e && [e.offsetLeft + e.offsetWidth / 2, e.offsetTop + e.offsetHeight / 2]; };
+  $("#liens").innerHTML = M.cur.data.liens.map((l, i) => {
+    const a = centre(l.de), b = centre(l.vers); if (!a || !b) return ""; const my = (a[1] + b[1]) / 2;
+    const d = `M${a[0]},${a[1]} C${a[0]},${my} ${b[0]},${my} ${b[0]},${b[1]}`;
+    return `<path d="${d}"/><path class="hit" data-i="${i}" d="${d}"><title>Cliquer pour supprimer ce lien</title></path>`;
+  }).join("");
+}
+
+// ===== Schémas : interactions =====
+// Déplacement à la souris ou au doigt, calé sur la grille de 20 px
+$("#canvas").onpointerdown = e => {
+  const el = e.target.closest(".bloc"); if (!el || e.target.closest(".lk")) return;
+  const b = M.cur.data.blocs.find(x => x.id === el.dataset.id), dx = e.clientX - b.x, dy = e.clientY - b.y; let bouge = false;
+  el.setPointerCapture(e.pointerId);
+  el.onpointermove = m => { bouge = true; b.x = Math.max(0, m.clientX - dx); b.y = Math.max(0, m.clientY - dy); el.style.left = b.x + "px"; el.style.top = b.y + "px"; traits(); };
+  el.onpointerup = () => {
+    el.onpointermove = el.onpointerup = null; if (!bouge) return;
+    b.x = Math.round(b.x / 20) * 20; b.y = Math.round(b.y / 20) * 20; el.style.left = b.x + "px"; el.style.top = b.y + "px"; traits(); sauver();
+  };
+};
+// Clic : 🔗 sélectionne la source, clic sur un 2e bloc crée le lien, clic sur un lien le supprime
+$("#canvas").onclick = e => {
+  const el = e.target.closest(".bloc"), hit = e.target.closest(".hit");
+  if (e.target.closest(".lk")) { M.src = M.src === el.dataset.id ? null : el.dataset.id; return dessiner(); }
+  if (el && M.src && M.src !== el.dataset.id) {
+    const l = M.cur.data.liens, a = M.src, b = el.dataset.id;
+    if (!l.some(x => (x.de === a && x.vers === b) || (x.de === b && x.vers === a))) { l.push({de:a, vers:b}); sauver(); }
+    M.src = null; return dessiner();
+  }
+  if (hit && confirm("Supprimer ce lien ?")) { M.cur.data.liens.splice(+hit.dataset.i, 1); sauver(); traits(); }
+};
+// Double-clic : modifier un bloc ou en créer un à l'endroit cliqué
+$("#canvas").ondblclick = e => {
+  if (!M.cur) return alert("Crée d'abord un schéma avec « + Schéma »."); const el = e.target.closest(".bloc"), r = $("#canvas").getBoundingClientRect();
+  el ? ouvrirBloc(M.cur.data.blocs.find(b => b.id === el.dataset.id)) : ouvrirBloc(null, e.clientX - r.left, e.clientY - r.top);
+};
+$("#s-bloc").onclick = () => { if (!M.cur) return alert("Crée d'abord un schéma avec « + Schéma »."); const w = $("#canvas-wrap"); ouvrirBloc(null, w.scrollLeft + 40, w.scrollTop + 40); };
+
+// ===== Fenêtre bloc =====
+function ouvrirBloc(b, x, y) {
+  M.edit = b ?? {id:crypto.randomUUID(), x:Math.round(x / 20) * 20, y:Math.round(y / 20) * 20, nouveau:true};
+  $("#b-titre").value = b?.titre ?? ""; $("#b-items").value = (b?.items ?? []).join("\n"); $("#b-coul").value = b?.couleur ?? "#15acfd";
+  $("#b-suppr").classList.toggle("hide", !b); $("#d-bloc").returnValue = ""; $("#d-bloc").showModal(); $("#b-titre").focus();
+}
+$("#d-bloc").onclose = () => {
+  if ($("#d-bloc").returnValue !== "ok") return; const b = M.edit;
+  Object.assign(b, {titre:$("#b-titre").value.trim(), items:$("#b-items").value.split("\n").map(s => s.trim()).filter(Boolean), couleur:$("#b-coul").value});
+  if (b.nouveau) { delete b.nouveau; M.cur.data.blocs.push(b); } sauver(); dessiner();
+};
+$("#b-suppr").onclick = () => {
+  if (!confirm("Supprimer ce bloc et ses liens ?")) return; const d = M.cur.data, id = M.edit.id;
+  d.blocs = d.blocs.filter(b => b.id !== id); d.liens = d.liens.filter(l => l.de !== id && l.vers !== id);
+  $("#d-bloc").close(); sauver(); dessiner();
+};
+</script>
+</body>
+</html>
