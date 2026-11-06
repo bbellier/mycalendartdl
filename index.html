@@ -60,6 +60,10 @@ main{display:grid;grid-template-columns:2fr 1fr;gap:16px;padding:0 16px 12px;hei
 .day{position:relative;min-height:0;background:var(--blanc);border:1px solid var(--trait);border-radius:8px;padding:3px 4px;cursor:pointer;overflow:hidden;transition:border-color .2s}
 .day:hover{border-color:var(--bleu)}
 .day.out{opacity:.35}
+.day.we{background:#fafbfe}
+.day.ferie{background:#fff7e8}
+.day .fer{font-size:.62rem;font-weight:700;color:#a35a00;margin-left:.2rem;vertical-align:middle}
+.chip.virt{opacity:.55;border-left-style:dashed;background:none}
 .day .n{font-size:.78rem;font-weight:700;display:inline-flex;align-items:center;justify-content:center;width:1.45rem;height:1.45rem;border-radius:50%}
 .day.today{background:var(--bleu_clair);border-color:var(--bleu)}
 .day.today .n{background:var(--nuit);color:var(--bleu)}
@@ -241,7 +245,9 @@ dialog::backdrop{background:#121935b0}
   </div>
   <label>Importance</label>
   <div class="niveaux" id="t-imp"><button type="button" data-n="1">● Basse</button><button type="button" data-n="2">●● Moyenne</button><button type="button" data-n="3">●●● Haute</button></div>
-  <label>Notes</label><textarea id="t-notes" rows="3"></textarea>
+  <label>Répétition</label>
+  <select id="t-rec"><option value="">Aucune</option><option value="semaine">🔁 Chaque semaine</option><option value="mois">🔁 Chaque mois</option><option value="annee">🔁 Chaque année</option></select>
+  <label>Notes <small>(Ctrl + Entrée pour enregistrer depuis ce champ)</small></label><textarea id="t-notes" rows="3"></textarea>
   <label class="opt"><input type="checkbox" id="t-etoile"> ⭐ Rappel par mail 7 jours et 1 jour avant l'échéance</label>
   <label><input type="checkbox" id="t-fait"> Terminée</label>
   <div class="acts"><button type="button" class="dang" id="t-suppr">Supprimer</button><span class="sp"></span><button value="cancel" formnovalidate>Annuler</button><button class="prim" value="ok">Enregistrer</button></div>
@@ -264,8 +270,8 @@ dialog::backdrop{background:#121935b0}
 
 <script>
 // ===== Configuration Supabase (Project Settings > API) =====
-const SUPABASE_URL = "https://rlmgnixsaiweckkknscu.supabase.co";
-const SUPABASE_KEY = "sb_publishable_PWnkgnJS1A6jrLdEiTCn6g_buV90sTJ";
+const SUPABASE_URL = "https://VOTRE-PROJET.supabase.co";
+const SUPABASE_KEY = "VOTRE_CLE_PUBLISHABLE_OU_ANON";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ===== Utilitaires =====
@@ -316,6 +322,53 @@ document.querySelectorAll(".onglets button").forEach(b => b.onclick = () => {
 });
 
 // ===== Clavier : ← → changent de mois, Échap annule une liaison =====
+// ===== Entrée valide la fenêtre en cours (Ctrl + Entrée dans une zone de texte multiligne) =====
+document.querySelectorAll("dialog").forEach(d => d.addEventListener("keydown", e => {
+  if (e.key !== "Enter" || e.isComposing || e.target.tagName === "BUTTON") return;
+  if (e.target.tagName === "TEXTAREA" && !(e.ctrlKey || e.metaKey)) return;
+  e.preventDefault(); d.querySelector("button.prim").click();
+}));
+
+// ===== Jours fériés français (fixes + Pâques, Ascension, Pentecôte) =====
+const FERIES = {};
+function feries(a) {
+  if (FERIES[a]) return FERIES[a];
+  // Date de Pâques (algorithme de Meeus)
+  const g = a % 19, c = Math.floor(a / 100), h = (c - Math.floor(c / 4) - Math.floor((8 * c + 13) / 25) + 19 * g + 15) % 30;
+  const i = h - Math.floor(h / 28) * (1 - Math.floor(29 / (h + 1)) * Math.floor((21 - g) / 11)), j = (a + Math.floor(a / 4) + i + 2 - c + Math.floor(c / 4)) % 7;
+  const l = i - j, mois = 3 + Math.floor((l + 40) / 44), jour = l + 28 - 31 * Math.floor(mois / 4), paques = new Date(a, mois - 1, jour);
+  const plus = n => { const d = new Date(paques); d.setDate(d.getDate() + n); return iso(d); };
+  return FERIES[a] = {[`${a}-01-01`]:"Jour de l'an", [plus(1)]:"Lundi de Pâques", [`${a}-05-01`]:"Fête du travail", [`${a}-05-08`]:"Victoire 1945",
+    [plus(39)]:"Ascension", [plus(50)]:"Lundi de Pentecôte", [`${a}-07-14`]:"Fête nationale", [`${a}-08-15`]:"Assomption",
+    [`${a}-11-01`]:"Toussaint", [`${a}-11-11`]:"Armistice", [`${a}-12-25`]:"Noël"};
+}
+
+// ===== Tâches récurrentes =====
+const REC = {semaine:"hebdo", mois:"mensuelle", annee:"annuelle"};
+const finMois = (a, m) => new Date(a, m + 1, 0).getDate();
+// Prochaine échéance après « s » (le jour est ramené au dernier jour du mois si besoin : 31 janv. → 28 févr.)
+function suivante(s, rec) {
+  const [a, m, j] = s.split("-").map(Number);
+  if (rec === "semaine") { const d = new Date(a, m - 1, j + 7); return iso(d); }
+  const na = rec === "annee" ? a + 1 : a + (m === 12 ? 1 : 0), nm = rec === "annee" ? m - 1 : m % 12;
+  return iso(new Date(na, nm, Math.min(j, finMois(na, nm))));
+}
+// Le jour « k » est-il une occurrence future de la tâche récurrente « t » ?
+function occurrence(t, k) {
+  if (!t.recurrence || t.fait || !t.echeance || k <= t.echeance) return false;
+  const [a, m, j] = t.echeance.split("-").map(Number), [ka, km, kj] = k.split("-").map(Number);
+  if (t.recurrence === "semaine") return Math.round((new Date(ka, km - 1, kj) - new Date(a, m - 1, j)) / 864e5) % 7 === 0;
+  if (t.recurrence === "annee" && km !== m) return false;
+  return kj === Math.min(j, finMois(ka, km - 1));
+}
+// Terminer une tâche récurrente : crée l'occurrence suivante et retire la répétition de celle qui est faite
+async function prochaine(t) {
+  if (!t.recurrence || !t.echeance) return;
+  const {id, user_id, created_at, ...copie} = t;
+  oops((await sb.from("taches").insert({...copie, echeance:suivante(t.echeance, t.recurrence), fait:false})).error);
+  oops((await sb.from("taches").update({recurrence:null}).eq("id", t.id)).error);
+}
+
 document.addEventListener("keydown", e => {
   if (document.querySelector("dialog[open]") || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || $("#app").classList.contains("hide")) return;
   if (vue() === "agenda" && e.key === "ArrowLeft") { e.preventDefault(); changerMois(-1); }
@@ -365,8 +418,11 @@ function calendrier() {
     const d = new Date(debut); d.setDate(debut.getDate() + i); const k = iso(d);
     // Tâches du jour : les plus importantes en premier, les terminées en dernier
     const ts = S.taches.filter(t => t.echeance === k).sort((a, b) => a.fait - b.fait || parImp(a, b));
-    h += `<div class="day ${d.getMonth() !== m.getMonth() ? "out" : ""} ${k === auj() ? "today" : ""}" data-d="${k}"><div class="n">${d.getDate()}</div>`
-      + ts.map(t => `<span class="chip ${t.fait ? "done" : ""} ${t.importance === 3 && !t.fait ? "haute" : ""}" data-id="${t.id}" style="border-color:${cat(t.categorie_id).couleur}">${t.etoile ? "⭐" : esc(cat(t.categorie_id).icone)} ${esc(t.titre)}</span>`).join("") + `</div>`;
+    // Occurrences futures des tâches récurrentes (affichées en pointillé) et jour férié éventuel
+    const vs = S.taches.filter(t => occurrence(t, k)), fer = feries(d.getFullYear())[k];
+    h += `<div class="day ${d.getMonth() !== m.getMonth() ? "out" : ""} ${k === auj() ? "today" : ""} ${d.getDay() % 6 === 0 ? "we" : ""} ${fer ? "ferie" : ""}" data-d="${k}"><span class="n">${d.getDate()}</span>${fer ? `<span class="fer">${fer}</span>` : ""}`
+      + ts.map(t => `<span class="chip ${t.fait ? "done" : ""} ${t.importance === 3 && !t.fait ? "haute" : ""}" data-id="${t.id}" style="border-color:${cat(t.categorie_id).couleur}">${t.etoile ? "⭐" : esc(cat(t.categorie_id).icone)} ${esc(t.titre)}</span>`).join("")
+      + vs.map(t => `<span class="chip virt" data-id="${t.id}" style="border-color:${cat(t.categorie_id).couleur}" title="Prochaine occurrence (tâche répétée)">🔁 ${esc(t.titre)}</span>`).join("") + `</div>`;
   }
   $("#cal").innerHTML = h; ajuster();
 }
@@ -397,7 +453,7 @@ function liste() {
     return `<div class="task ${t.fait ? "done" : ""}" data-id="${t.id}" style="border-left-color:${c.couleur}">
       <input type="checkbox" ${t.fait ? "checked" : ""}>
       <div class="t"><span>${esc(c.icone)} ${esc(t.titre)}</span>
-      <div class="m">${points(t.importance ?? 2)} ${esc(c.nom)}${t.echeance ? ` · ${echeance(t)}` : ""}</div></div>
+      <div class="m">${points(t.importance ?? 2)} ${esc(c.nom)}${t.echeance ? ` · ${echeance(t)}` : ""}${t.recurrence ? ` · 🔁 ${REC[t.recurrence]}` : ""}</div></div>
       <div class="actions"><button class="star ${t.etoile ? "on" : ""}" title="Rappel par mail 7 j et 1 j avant">${t.etoile ? "★" : "☆"}</button><button class="poub" title="Supprimer la tâche">🗑</button></div></div>`;
   }).join("") || `<p class="m" style="color:var(--texte_doux)">Rien à faire 🎉</p>`;
 }
@@ -413,7 +469,11 @@ $("#liste").onclick = async e => {
     if (!t.etoile && !t.echeance) return alert("Ajoute d'abord une échéance à cette tâche pour recevoir un rappel.");
     oops((await sb.from("taches").update({etoile:!t.etoile}).eq("id", t.id)).error); t.etoile = !t.etoile; rendu();
   }
-  else if (e.target.type === "checkbox") { oops((await sb.from("taches").update({fait:!t.fait}).eq("id", t.id)).error); t.fait = !t.fait; rendu(); }
+  else if (e.target.type === "checkbox") {
+    oops((await sb.from("taches").update({fait:!t.fait}).eq("id", t.id)).error);
+    if (!t.fait && t.recurrence) { await prochaine(t); return charger(); }
+    t.fait = !t.fait; rendu();
+  }
   else ouvrirTache(t);
 };
 
@@ -423,15 +483,19 @@ $("#t-imp").onclick = e => { if (e.target.dataset.n) choisirImp(+e.target.datase
 function ouvrirTache(t, date) {
   S.edit = t; $("#dt-titre").textContent = t ? "Modifier la tâche" : "Nouvelle tâche";
   $("#t-titre").value = t?.titre ?? ""; $("#t-date").value = t?.echeance ?? date ?? ""; $("#t-cat").value = t?.categorie_id ?? "";
-  $("#t-notes").value = t?.notes ?? ""; $("#t-fait").checked = !!t?.fait; $("#t-etoile").checked = !!t?.etoile; choisirImp(t?.importance ?? 2);
+  $("#t-notes").value = t?.notes ?? ""; $("#t-fait").checked = !!t?.fait; $("#t-etoile").checked = !!t?.etoile; $("#t-rec").value = t?.recurrence ?? ""; choisirImp(t?.importance ?? 2);
   $("#t-suppr").classList.toggle("hide", !t); $("#d-tache").returnValue = ""; $("#d-tache").showModal(); $("#t-titre").focus();
 }
 $("#b-tache").onclick = () => ouvrirTache(null);
 $("#d-tache").onclose = async () => {
   if ($("#d-tache").returnValue !== "ok") return;
-  const v = {titre:$("#t-titre").value.trim(), echeance:$("#t-date").value || null, categorie_id:$("#t-cat").value || null, notes:$("#t-notes").value || null, importance:S.imp, fait:$("#t-fait").checked, etoile:$("#t-etoile").checked};
+  const v = {titre:$("#t-titre").value.trim(), echeance:$("#t-date").value || null, categorie_id:$("#t-cat").value || null, notes:$("#t-notes").value || null, importance:S.imp, fait:$("#t-fait").checked, etoile:$("#t-etoile").checked, recurrence:$("#t-rec").value || null};
+  if (v.recurrence && !v.echeance) alert("Une tâche répétée a besoin d'une échéance : la répétition ne s'appliquera qu'une fois la date renseignée.");
   if (v.etoile && !v.echeance) alert("Sans échéance, aucun rappel mail ne sera envoyé pour cette tâche.");
-  oops((S.edit ? await sb.from("taches").update(v).eq("id", S.edit.id) : await sb.from("taches").insert(v)).error); charger();
+  oops((S.edit ? await sb.from("taches").update(v).eq("id", S.edit.id) : await sb.from("taches").insert(v)).error);
+  // Tâche répétée qui vient d'être terminée : créer l'occurrence suivante
+  if (S.edit && v.fait && !S.edit.fait) await prochaine({...S.edit, ...v});
+  charger();
 };
 $("#t-suppr").onclick = async () => {
   if (!confirm("Supprimer cette tâche ?")) return;
