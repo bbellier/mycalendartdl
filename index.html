@@ -264,8 +264,8 @@ dialog::backdrop{background:#121935b0}
 
 <script>
 // ===== Configuration Supabase (Project Settings > API) =====
-const SUPABASE_URL = "https://VOTRE-PROJET.supabase.co";
-const SUPABASE_KEY = "VOTRE_CLE_PUBLISHABLE_OU_ANON";
+const SUPABASE_URL = "https://rlmgnixsaiweckkknscu.supabase.co";
+const SUPABASE_KEY = "sb_publishable_PWnkgnJS1A6jrLdEiTCn6g_buV90sTJ";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ===== Utilitaires =====
@@ -293,7 +293,13 @@ const oops = e => { if (e) { alert("Erreur : " + e.message); throw e; } };
 $("#f-login").onsubmit = async e => {
   e.preventDefault(); $("#l-err").textContent = "";
   const {error} = await sb.auth.signInWithPassword({email:$("#l-mail").value, password:$("#l-mdp").value});
-  if (error) $("#l-err").textContent = "Identifiants incorrects.";
+  // Message explicite selon la cause renvoyée par Supabase
+  if (error) { const m = error.message || String(error);
+    $("#l-err").textContent = /Invalid login credentials/i.test(m) ? "Email ou mot de passe incorrect (vérifie l'utilisateur dans Supabase > Authentication > Users)."
+      : /Email not confirmed/i.test(m) ? "Compte non confirmé : dans Supabase > Authentication > Users, confirme l'utilisateur."
+      : /Invalid API key|No API key/i.test(m) ? "Clé Supabase incorrecte dans le fichier (SUPABASE_KEY)."
+      : /fetch|network|Load failed/i.test(m) ? "Supabase injoignable : projet en pause ou adresse SUPABASE_URL incorrecte."
+      : "Erreur Supabase : " + m; }
 };
 $("#b-out").onclick = () => sb.auth.signOut();
 sb.auth.onAuthStateChange((_, session) => {
