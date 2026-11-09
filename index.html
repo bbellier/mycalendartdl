@@ -166,69 +166,25 @@ dialog::backdrop{background:#121935b0}
 .composer input{font-weight:700}
 .composer .acts{margin-top:.3rem}
 .ntitre{font-size:.8rem;font-weight:700;color:var(--texte_doux);text-transform:uppercase;letter-spacing:.05em;margin:.4rem 0 .5rem}
-.grille{columns:240px;column-gap:12px}
-.note{break-inside:avoid;margin-bottom:12px;border:1px solid var(--trait);border-radius:12px;padding:.7rem .85rem;cursor:pointer;position:relative;transition:box-shadow .2s}
+.grille{columns:300px;column-gap:16px}
+.note{break-inside:avoid;margin-bottom:16px;border:1px solid var(--trait);border-radius:14px;padding:1rem 1.1rem .8rem;min-height:150px;cursor:pointer;position:relative;transition:box-shadow .2s,transform .2s}
+.note:hover{transform:translateY(-2px)}
 .note:hover{box-shadow:0 4px 14px #12193522}
-.note h4{margin:0 1.6rem .3rem 0;font-size:.98rem}
-.note p{margin:0;white-space:pre-wrap;font-size:.88rem;color:#2b3350;max-height:16em;overflow:hidden}
+.note h4{margin:0 1.8rem .45rem 0;font-size:1.08rem}
+.note p{margin:0;white-space:pre-wrap;word-break:break-word;font-size:.92rem;line-height:1.5;color:#2b3350;max-height:24em;overflow:hidden}
+.note.long p{-webkit-mask-image:linear-gradient(#000 75%,transparent);mask-image:linear-gradient(#000 75%,transparent)}
+.note .suite{font-size:.75rem;font-weight:700;color:var(--bleu_fonce);margin-top:.2rem}
+.note .vide-n{color:var(--texte_doux);font-style:italic}
+#d-note{width:min(880px,calc(100% - 32px))}
+#dn-titre{font-weight:700;font-size:1.25rem;border:0;border-bottom:2px solid var(--trait);border-radius:0;padding:.4rem 0}
+#dn-texte{margin-top:.6rem;height:min(58vh,560px);font-size:.98rem;line-height:1.6;resize:vertical}
+.nbar .prim{margin-left:auto}
 .note .pin{position:absolute;top:.4rem;right:.4rem;border:0;background:none;padding:.1rem;opacity:.3;font-size:.95rem}
 .note .pin.on,.note:hover .pin{opacity:1}
 .note small{display:block;margin-top:.5rem;font-size:.7rem;color:var(--texte_doux)}
 .pastels{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .pastels button{width:28px;height:28px;padding:0;border-radius:50%;border:1px solid var(--trait)}
 .pastels button.on{box-shadow:0 0 0 2px var(--nuit)}
-/* ===== Solo Leveling : fenêtres « Système » ===== */
-#v-solo{background:#0b1026;min-height:calc(100vh - var(--haut_nav));padding:16px;color:#dbe7ff;display:grid;grid-template-columns:minmax(280px,1fr) 2fr;gap:16px;align-content:start}
-@media (max-width:860px){#v-solo{grid-template-columns:1fr}}
-.sys{background:linear-gradient(180deg,#121935f0,#0d1430f0);border:1px solid #15acfd88;border-radius:6px;box-shadow:0 0 18px #15acfd40,inset 0 0 24px #15acfd14;padding:14px 16px}
-.sys h3{border:0;padding:0;text-align:center;letter-spacing:.25em;text-transform:uppercase;color:#fff;font-size:1rem;text-shadow:0 0 10px #15acfd;margin-bottom:.8rem}
-.sys h3::before,.sys h3::after{content:" ◆ ";color:var(--bleu)}
-.niv{text-align:center}
-.niv .gros{font-size:3.2rem;font-weight:700;color:#fff;line-height:1;text-shadow:0 0 16px #15acfd}
-.niv .rang{display:inline-block;margin:.4rem 0;padding:.1rem .8rem;border:1px solid var(--bleu);border-radius:4px;font-weight:700;letter-spacing:.1em;color:var(--bleu)}
-.niv .titre{font-size:.85rem;color:#9fb3e6}
-.barre-xp{height:10px;background:#ffffff14;border-radius:5px;overflow:hidden;margin:.6rem 0 .2rem}
-.barre-xp i{display:block;height:100%;background:linear-gradient(90deg,#0a5f8c,#15acfd,#8fdcff);box-shadow:0 0 10px #15acfd;transition:width .6s}
-.xp-txt{display:flex;justify-content:space-between;font-size:.75rem;color:#9fb3e6}
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:.4rem .9rem;margin-top:.9rem;font-size:.9rem}
-.stats div{display:flex;justify-content:space-between;border-bottom:1px solid #15acfd30;padding:.15rem 0}
-.stats b{color:#fff}
-.serie{text-align:center;margin-top:.8rem;font-size:.9rem}
-.serie b{color:#ffb547;font-size:1.1rem}
-.penal{background:#3a0f1a;border:1px solid #e5484d;color:#ffb3b5;border-radius:6px;padding:.5rem .8rem;margin-bottom:.8rem;font-size:.85rem;text-align:center;box-shadow:0 0 14px #e5484d55}
-.chrono{text-align:center;font-size:.8rem;color:#9fb3e6;margin-top:.6rem}
-.chrono b{color:#fff;font-variant-numeric:tabular-nums}
-.quete{display:flex;align-items:center;gap:.6rem;padding:.45rem .2rem;border-bottom:1px dashed #15acfd30}
-.quete input{width:auto;accent-color:var(--bleu);transform:scale(1.2)}
-.quete .q{flex:1}
-.quete .q small{display:block;color:#8ea2d6;font-size:.72rem}
-.quete.ok .q span{text-decoration:line-through;opacity:.6}
-.quete .xp{font-size:.75rem;font-weight:700;color:var(--bleu);white-space:nowrap}
-.quete .poub{color:#fff}
-.sys button{background:transparent;border-color:#15acfd88;color:#dbe7ff}
-.sys button:hover{background:#15acfd;color:#0b1026}
-.sys .vide{color:#8ea2d6;font-size:.85rem;text-align:center;margin:.6rem 0}
-.recomp{text-align:center;font-size:.8rem;color:#9fb3e6;margin-top:.5rem}
-.journal{font-size:.8rem;color:#9fb3e6;max-height:12rem;overflow:auto}
-.journal div{display:flex;justify-content:space-between;gap:.5rem;padding:.15rem 0}
-.journal b{color:var(--bleu)}
-.paliers{display:flex;gap:4px;margin:.6rem 0 .8rem}
-.paliers span{flex:1;text-align:center;font-size:.68rem;padding:.3rem .2rem;border:1px solid #15acfd40;border-radius:4px;color:#8ea2d6;line-height:1.2}
-.paliers span.fait{background:#15acfd30;color:#fff;border-color:#15acfd}
-.paliers span.actuel{border-color:#fff;color:#fff;box-shadow:0 0 10px #15acfd}
-.crit label{display:flex;gap:.5rem;align-items:flex-start;color:#dbe7ff;font-weight:500;margin:.35rem 0;font-size:.88rem}
-.crit input{width:auto;accent-color:var(--bleu);margin-top:.25rem}
-.reeduc-info{font-size:.75rem;color:#8ea2d6;margin-top:.7rem;line-height:1.45}
-.reeduc-info details{margin-top:.4rem}
-.reeduc-info summary{cursor:pointer;color:#ffb3b5}
-.sys input[type=date]{background:#0b1026;color:#fff;border-color:#15acfd88;width:auto;color-scheme:dark}
-.sys button:disabled{opacity:.35;cursor:not-allowed}
-.sys button:disabled:hover{background:transparent;color:#dbe7ff}
-.lvlup{position:fixed;inset:0;z-index:50;display:grid;place-items:center;background:#0b1026c0;animation:apparait .3s}
-.lvlup .sys{text-align:center;padding:2rem 3rem;animation:pulse 1.2s infinite alternate}
-.lvlup .grand{font-size:2rem;font-weight:700;color:#fff;letter-spacing:.15em;text-shadow:0 0 18px #15acfd}
-@keyframes apparait{from{opacity:0;transform:scale(.9)}}
-@keyframes pulse{to{box-shadow:0 0 40px #15acfd,inset 0 0 30px #15acfd30}}
 </style>
 </head>
 <body>
@@ -251,7 +207,7 @@ dialog::backdrop{background:#121935b0}
 <section id="app" class="hide">
   <nav>
     <span class="logo"><img src="https://bbellier.github.io/mydatafutee/img/logo.png" alt="DATAfutée"></span>
-    <div class="onglets"><button class="on" data-v="agenda">📅<span> Agenda</span></button><button data-v="schemas">🧠<span> Schémas</span></button><button data-v="notes">📝<span> Notes</span></button><button data-v="solo">⚔️<span> Solo Leveling</span></button></div>
+    <div class="onglets"><button class="on" data-v="agenda">📅<span> Agenda</span></button><button data-v="schemas">🧠<span> Schémas</span></button><button data-v="notes">📝<span> Notes</span></button></div>
     <button id="b-out" title="Déconnexion">⏻</button>
   </nav>
 
@@ -306,37 +262,10 @@ dialog::backdrop{background:#121935b0}
 
   <!-- ===== Onglet Notes ===== -->
   <div id="v-notes" class="hide">
-    <div class="nbar"><input id="n-cherche" type="search" placeholder="🔍 Rechercher dans les notes"></div>
-    <div class="composer">
-      <input id="n-titre" placeholder="Titre">
-      <textarea id="n-texte" rows="2" placeholder="Créer une note… (Ctrl + Entrée pour ajouter)"></textarea>
-      <div class="acts"><span class="sp"></span><button class="prim" id="n-ajout">Ajouter</button></div>
-    </div>
+    <div class="nbar"><input id="n-cherche" type="search" placeholder="🔍 Rechercher dans les notes"><button class="prim" id="n-ajout">+ Nouvelle note</button></div>
     <div id="notes"></div>
   </div>
 
-  <!-- ===== Onglet Solo Leveling ===== -->
-  <div id="v-solo" class="hide">
-    <div>
-      <div class="sys" id="statut"></div>
-      <div class="sys" style="margin-top:16px"><h3>Journal</h3><div class="journal" id="journal"></div></div>
-    </div>
-    <div>
-      <div id="penalite"></div>
-      <div class="sys" id="reeduc" style="margin-bottom:16px"></div>
-      <div class="sys">
-        <h3>Quête journalière</h3>
-        <div id="q-jour"></div>
-        <div class="recomp" id="q-recomp"></div>
-        <div class="chrono">Temps restant : <b id="chrono">--:--:--</b> · ne pas l'accomplir déclenche la zone de pénalité</div>
-      </div>
-      <div class="sys" style="margin-top:16px">
-        <h3>Quêtes</h3>
-        <div id="q-autres"></div>
-        <div style="text-align:center;margin-top:.8rem"><button id="q-new">+ Nouvelle quête</button></div>
-      </div>
-    </div>
-  </div>
 </section>
 
 <!-- ===== Fenêtre bloc ===== -->
@@ -370,22 +299,10 @@ dialog::backdrop{background:#121935b0}
   <div class="acts"><button type="button" class="dang" id="t-suppr">Supprimer</button><span class="sp"></span><button value="cancel" formnovalidate>Annuler</button><button class="prim" value="ok">Enregistrer</button></div>
 </form></dialog>
 
-<!-- ===== Fenêtre quête ===== -->
-<dialog id="d-quete"><form method="dialog">
-  <h3>Nouvelle quête</h3>
-  <label>Intitulé</label><input id="q-titre" required placeholder="Ex. : 30 min de lecture">
-  <div class="row">
-    <div><label>Type</label><select id="q-type"><option value="quotidienne">Journalière (chaque jour)</option><option value="unique">Unique</option></select></div>
-    <div><label>Statistique</label><select id="q-stat"></select></div>
-  </div>
-  <label>Difficulté</label><select id="q-rang"></select>
-  <div class="acts"><span class="sp"></span><button value="cancel" formnovalidate>Annuler</button><button class="prim" value="ok">Créer</button></div>
-</form></dialog>
-
 <!-- ===== Fenêtre note ===== -->
 <dialog id="d-note"><form method="dialog">
-  <input id="dn-titre" placeholder="Titre" style="font-weight:700;font-size:1.05rem">
-  <textarea id="dn-texte" rows="10" placeholder="Note" style="margin-top:.5rem"></textarea>
+  <input id="dn-titre" placeholder="Titre">
+  <textarea id="dn-texte" placeholder="Écris ta note… (Ctrl + Entrée pour enregistrer)"></textarea>
   <label>Couleur</label><div class="pastels" id="dn-coul"></div>
   <label class="opt"><input type="checkbox" id="dn-pin"> 📌 Épingler en haut</label>
   <div class="acts"><button type="button" class="dang" id="dn-suppr">Supprimer</button><span class="sp"></span><button value="cancel" formnovalidate>Annuler</button><button class="prim" value="ok">Enregistrer</button></div>
@@ -476,8 +393,8 @@ sb.auth.onAuthStateChange((ev, session) => {
 const vue = () => $(".onglets .on").dataset.v;
 document.querySelectorAll(".onglets button").forEach(b => b.onclick = () => {
   document.querySelectorAll(".onglets button").forEach(x => x.classList.toggle("on", x === b));
-  ["agenda", "schemas", "notes", "solo"].forEach(v => $("#v-" + v).classList.toggle("hide", b.dataset.v !== v));
-  ({agenda:calendrier, schemas:() => chargerSchemas(), notes:chargerNotes, solo:chargerSolo})[b.dataset.v]();
+  ["agenda", "schemas", "notes"].forEach(v => $("#v-" + v).classList.toggle("hide", b.dataset.v !== v));
+  ({agenda:calendrier, schemas:() => chargerSchemas(), notes:chargerNotes})[b.dataset.v]();
 });
 
 // ===== Clavier : ← → changent de mois, Échap annule une liaison =====
@@ -872,194 +789,48 @@ async function chargerNotes() {
 function afficherNotes() {
   const q = $("#n-cherche").value.trim().toLowerCase();
   const ns = N.liste.filter(n => !q || (n.titre + " " + n.contenu).toLowerCase().includes(q));
-  const carte = n => `<div class="note" data-id="${n.id}" style="background:${n.couleur}"><button class="pin ${n.epingle ? "on" : ""}" title="${n.epingle ? "Désépingler" : "Épingler"}">📌</button>
-    ${n.titre ? `<h4>${esc(n.titre)}</h4>` : ""}<p>${esc(n.contenu)}</p><small>${new Date(n.updated_at).toLocaleDateString("fr-FR", {day:"numeric", month:"short"})}</small></div>`;
+  // Longue note : fondu en bas de carte et invitation à l'ouvrir en entier
+  const longue = n => n.contenu.split("\n").length > 16 || n.contenu.length > 900;
+  const carte = n => `<div class="note ${longue(n) ? "long" : ""}" data-id="${n.id}" style="background:${n.couleur}"><button class="pin ${n.epingle ? "on" : ""}" title="${n.epingle ? "Désépingler" : "Épingler"}">📌</button>
+    ${n.titre ? `<h4>${esc(n.titre)}</h4>` : ""}<p>${n.contenu ? esc(n.contenu) : `<span class="vide-n">Note vide</span>`}</p>${longue(n) ? `<div class="suite">Ouvrir la note en entier ›</div>` : ""}
+    <small>${new Date(n.updated_at).toLocaleDateString("fr-FR", {day:"numeric", month:"short"})}</small></div>`;
   const ep = ns.filter(n => n.epingle), au = ns.filter(n => !n.epingle);
   $("#notes").innerHTML = (ep.length ? `<div class="ntitre">📌 Épinglées</div><div class="grille">${ep.map(carte).join("")}</div>` : "")
     + (au.length ? `${ep.length ? `<div class="ntitre">Autres</div>` : ""}<div class="grille">${au.map(carte).join("")}</div>` : "")
     || `<p style="color:var(--texte_doux);text-align:center">${q ? "Aucune note ne correspond." : "Aucune note pour l'instant."}</p>`;
 }
 $("#n-cherche").oninput = afficherNotes;
-// Ajout rapide depuis la zone du haut (bouton ou Ctrl + Entrée)
-async function ajouterNote() {
-  const titre = $("#n-titre").value.trim(), contenu = $("#n-texte").value.trim(); if (!titre && !contenu) return $("#n-texte").focus();
-  oops((await sb.from("notes").insert({titre, contenu})).error); $("#n-titre").value = $("#n-texte").value = ""; chargerNotes();
+// Ouvrir l'éditeur (nouvelle note ou note existante)
+function ouvrirNote(n) {
+  N.edit = n; $("#dn-titre").value = n?.titre ?? ""; $("#dn-texte").value = n?.contenu ?? ""; $("#dn-pin").checked = !!n?.epingle; choisirPastel(n?.couleur ?? "#ffffff");
+  $("#dn-suppr").classList.toggle("hide", !n); $("#d-note").returnValue = ""; $("#d-note").showModal();
+  // Note existante : curseur et défilement en haut du texte
+  if (n) { const t = $("#dn-texte"); t.focus(); t.setSelectionRange(0, 0); t.scrollTop = 0; } else $("#dn-titre").focus();
 }
-$("#n-ajout").onclick = ajouterNote;
-$("#n-texte").onkeydown = e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); ajouterNote(); } };
-$("#n-titre").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); $("#n-texte").focus(); } };
+$("#n-ajout").onclick = () => ouvrirNote(null);
+// Entrée dans le titre : passer au texte (sans enregistrer)
+$("#dn-titre").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); $("#dn-texte").focus(); } };
 // Épingler depuis la carte, ou ouvrir la note
 $("#notes").onclick = async e => {
   const el = e.target.closest(".note"); if (!el) return; const n = N.liste.find(x => x.id === el.dataset.id);
   if (e.target.closest(".pin")) { oops((await sb.from("notes").update({epingle:!n.epingle}).eq("id", n.id)).error); n.epingle = !n.epingle; return afficherNotes(); }
-  N.edit = n; $("#dn-titre").value = n.titre; $("#dn-texte").value = n.contenu; $("#dn-pin").checked = n.epingle; choisirPastel(n.couleur);
-  $("#d-note").returnValue = ""; $("#d-note").showModal();
+  ouvrirNote(n);
 };
 const choisirPastel = c => { N.coul = c; document.querySelectorAll("#dn-coul button").forEach(b => b.classList.toggle("on", b.dataset.c === c)); };
 $("#dn-coul").innerHTML = PASTELS.map(c => `<button type="button" data-c="${c}" style="background:${c}"></button>`).join("");
 $("#dn-coul").onclick = e => { if (e.target.dataset.c) choisirPastel(e.target.dataset.c); };
 $("#d-note").onclose = async () => {
   if ($("#d-note").returnValue !== "ok") return;
-  oops((await sb.from("notes").update({titre:$("#dn-titre").value.trim(), contenu:$("#dn-texte").value, couleur:N.coul, epingle:$("#dn-pin").checked, updated_at:new Date().toISOString()}).eq("id", N.edit.id)).error);
+  const v = {titre:$("#dn-titre").value.trim(), contenu:$("#dn-texte").value, couleur:N.coul, epingle:$("#dn-pin").checked, updated_at:new Date().toISOString()};
+  // Nouvelle note restée vide : rien n'est créé
+  if (!N.edit && !v.titre && !v.contenu.trim()) return;
+  oops((N.edit ? await sb.from("notes").update(v).eq("id", N.edit.id) : await sb.from("notes").insert(v)).error);
   chargerNotes();
 };
 $("#dn-suppr").onclick = async () => {
   if (!confirm("Supprimer cette note ?")) return;
   oops((await sb.from("notes").delete().eq("id", N.edit.id)).error); $("#d-note").close(); chargerNotes();
 };
-
-// ===== Solo Leveling : quêtes, expérience et niveaux =====
-const STATS = {force:"💪 Force", agilite:"⚡ Agilité", endurance:"❤️ Endurance", intelligence:"🧠 Intelligence", perception:"👁 Perception"};
-const RANGS_Q = {E:10, D:20, C:35, B:50, A:75, S:100};
-// Quête journalière du manga, créée au premier passage
-const QUETE_MANGA = [["100 pompes","force"],["100 abdos","endurance"],["100 squats","force"],["10 km de course","agilite"]];
-let J = {quetes:[], journal:[], niveau:1};
-// XP nécessaire pour passer du niveau n au niveau n + 1
-const xpPour = n => 50 + 25 * n;
-function niveauDe(xp) { let n = 1; while (xp >= xpPour(n)) { xp -= xpPour(n); n++; } return {n, reste:xp, besoin:xpPour(n)}; }
-const rangDe = n => n >= 50 ? "S" : n >= 40 ? "A" : n >= 30 ? "B" : n >= 20 ? "C" : n >= 10 ? "D" : "E";
-const titreDe = n => n >= 50 ? "Monarque des Ombres" : n >= 40 ? "Chasseur d'élite" : n >= 30 ? "Chef de raid" : n >= 20 ? "Chasseur confirmé" : n >= 10 ? "Chasseur éveillé" : "Le plus faible de l'humanité";
-const hier = () => iso(new Date(Date.now() - 864e5));
-async function chargerSolo() {
-  const [q, j] = await Promise.all([sb.from("quetes").select("*").order("created_at"), sb.from("journal").select("*").order("created_at", {ascending:false})]);
-  oops(q.error); oops(j.error);
-  // Premier passage : le Système attribue la quête journalière
-  if (!q.data.length) { oops((await sb.from("quetes").insert(QUETE_MANGA.map(([titre, stat]) => ({titre, stat, xp:10, type:"quotidienne"})))).error); return chargerSolo(); }
-  J.quetes = q.data; J.journal = j.data; afficherSolo(); afficherReeduc();
-}
-function afficherSolo() {
-  const total = J.journal.reduce((s, l) => s + l.xp, 0), nv = niveauDe(total);
-  // Niveau supérieur depuis le dernier affichage : fenêtre du Système
-  if (J.vu && nv.n > J.niveau) monter(nv.n); J.niveau = nv.n; J.vu = true;
-  // Statistiques : 10 de base + 1 point par tranche de 10 XP gagnée dans la statistique
-  const st = Object.fromEntries(Object.keys(STATS).map(k => [k, 10 + Math.floor(J.journal.filter(l => l.stat === k).reduce((s, l) => s + l.xp, 0) / 10)]));
-  const jour = J.quetes.filter(q => q.type === "quotidienne"), fait = (q, d = auj()) => J.journal.some(l => l.quete_id === q.id && l.jour === d);
-  // Série : jours consécutifs (jusqu'à hier, plus aujourd'hui si fini) où toute la quête journalière a été accomplie
-  const complet = d => jour.length && jour.every(q => fait(q, d)); let serie = 0, d = new Date();
-  if (!complet(auj())) d.setDate(d.getDate() - 1);
-  while (complet(iso(d)) && serie < 3650) { serie++; d.setDate(d.getDate() - 1); }
-  const nom = (sb._session?.user?.email ?? "").split("@")[0] || "Chasseur";
-  $("#statut").innerHTML = `<h3>Statut</h3><div class="niv"><div style="font-size:.8rem;color:#9fb3e6">NOM : <b style="color:#fff">${esc(nom)}</b></div>
-    <div style="font-size:.8rem;color:#9fb3e6;margin-top:.6rem">NIVEAU</div><div class="gros">${nv.n}</div><div class="rang">RANG ${rangDe(nv.n)}</div><div class="titre">Titre : ${titreDe(nv.n)}</div></div>
-    <div class="barre-xp"><i style="width:${Math.round(nv.reste / nv.besoin * 100)}%"></i></div><div class="xp-txt"><span>XP ${nv.reste} / ${nv.besoin}</span><span>Total ${total} XP</span></div>
-    <div class="stats">${Object.entries(STATS).map(([k, l]) => `<div><span>${l}</span><b>${st[k]}</b></div>`).join("")}<div><span>🔥 Série</span><b>${serie} j</b></div></div>`;
-  // Pénalité si la quête journalière d'hier n'a pas été accomplie (et qu'au moins une quête existait déjà hier)
-  const existait = jour.some(q => q.created_at.slice(0, 10) <= hier());
-  $("#penalite").innerHTML = existait && !complet(hier()) && !complet(auj()) ? `<div class="penal">⚠ [Alerte] La quête journalière d'hier n'a pas été accomplie. Vous êtes transféré dans la zone de pénalité… Survivez en accomplissant celle d'aujourd'hui.</div>` : "";
-  const ligne = q => `<div class="quete ${fait(q) || !q.actif ? "ok" : ""}" data-id="${q.id}"><input type="checkbox" ${fait(q) || !q.actif ? "checked" : ""}>
-    <div class="q"><span>${esc(q.titre)}</span><small>${STATS[q.stat] ?? ""}${q.type === "unique" ? " · unique" : ""}${q.palier != null ? ` · 🦵 palier ${q.palier + 1}` : ""}</small></div><span class="xp">+${q.xp} XP</span><button class="poub" title="Abandonner la quête">🗑</button></div>`;
-  $("#q-jour").innerHTML = jour.map(ligne).join("") || `<p class="vide">Aucune quête journalière.</p>`;
-  const nb = jour.filter(q => fait(q)).length;
-  $("#q-recomp").innerHTML = jour.length ? (nb === jour.length ? "✅ Quête journalière accomplie. Récompenses obtenues." : `Progression : ${nb} / ${jour.length} · Récompense : +${jour.reduce((s, q) => s + q.xp, 0)} XP`) : "";
-  $("#q-autres").innerHTML = J.quetes.filter(q => q.type === "unique").sort((a, b) => !a.actif - !b.actif).map(ligne).join("") || `<p class="vide">Aucune quête unique. Le Système attend tes ordres.</p>`;
-  $("#journal").innerHTML = J.journal.slice(0, 30).map(l => `<div><span>${fmt(l.jour)} · ${esc(l.titre)}</span><b>+${l.xp}</b></div>`).join("") || `<p class="vide">Rien pour l'instant.</p>`;
-}
-// Cocher : gagner l'XP (une fois par jour pour une journalière, une seule fois pour une unique) ; décocher : annuler
-$("#v-solo").onclick = async e => {
-  const el = e.target.closest(".quete"); if (!el) return; const q = J.quetes.find(x => x.id === el.dataset.id);
-  if (e.target.closest(".poub")) {
-    if (!confirm(`Abandonner la quête « ${q.titre} » ? (l'XP déjà gagnée est conservée)`)) return;
-    oops((await sb.from("quetes").delete().eq("id", q.id)).error); return chargerSolo();
-  }
-  if (e.target.type !== "checkbox") return;
-  const log = J.journal.find(l => l.quete_id === q.id && (q.type === "unique" || l.jour === auj()));
-  if (log) { oops((await sb.from("journal").delete().eq("id", log.id)).error); if (q.type === "unique") oops((await sb.from("quetes").update({actif:true}).eq("id", q.id)).error); }
-  else { oops((await sb.from("journal").insert({quete_id:q.id, titre:q.titre, xp:q.xp, stat:q.stat, jour:auj()})).error); if (q.type === "unique") oops((await sb.from("quetes").update({actif:false}).eq("id", q.id)).error); }
-  chargerSolo();
-};
-// Nouvelle quête
-$("#q-stat").innerHTML = Object.entries(STATS).map(([k, l]) => `<option value="${k}">${l}</option>`).join("");
-$("#q-rang").innerHTML = Object.entries(RANGS_Q).map(([r, x]) => `<option value="${x}">Rang ${r} · +${x} XP</option>`).join("");
-$("#q-new").onclick = () => { $("#q-titre").value = ""; $("#d-quete").returnValue = ""; $("#d-quete").showModal(); $("#q-titre").focus(); };
-$("#d-quete").onclose = async () => {
-  if ($("#d-quete").returnValue !== "ok") return;
-  oops((await sb.from("quetes").insert({titre:$("#q-titre").value.trim(), type:$("#q-type").value, stat:$("#q-stat").value, xp:+$("#q-rang").value})).error); chargerSolo();
-};
-// Fenêtre « Niveau supérieur »
-function fenetreSys(grand, detail) {
-  const f = document.createElement("div"); f.className = "lvlup";
-  f.innerHTML = `<div class="sys"><div style="color:#9fb3e6;letter-spacing:.2em">[ SYSTÈME ]</div><div class="grand">${grand}</div><div style="margin-top:.6rem;font-size:1.1rem;color:#fff">${detail}</div><div style="margin-top:1rem;font-size:.8rem;color:#9fb3e6">Cliquer pour continuer</div></div>`;
-  f.onclick = () => f.remove(); document.body.appendChild(f);
-}
-function monter(n) {
-  const f = document.createElement("div"); f.className = "lvlup";
-  f.innerHTML = `<div class="sys"><div style="color:#9fb3e6;letter-spacing:.2em">[ SYSTÈME ]</div><div class="grand">NIVEAU SUPÉRIEUR !</div><div style="margin-top:.6rem;font-size:1.2rem;color:#fff">Niveau ${n} · Rang ${rangDe(n)}</div><div style="margin-top:1rem;font-size:.8rem;color:#9fb3e6">Cliquer pour continuer</div></div>`;
-  f.onclick = () => f.remove(); document.body.appendChild(f);
-}
-// ===== Rééducation LCA : paliers débloqués par critères (programme indicatif, à faire valider par le kiné) =====
-const PALIERS = [
-  {nom:"Protection", delai:"habituellement J0 → semaine 2", sem:0, exos:[["Contractions isométriques du quadriceps 3×10","force"],["Élévations jambe tendue 3×10","force"],["Extension passive talon surélevé 3×5 min","agilite"],["Flexion progressive assis (sans forcer)","agilite"],["Glaçage + jambe surélevée 3×20 min","endurance"],["Noter douleur et gonflement /10","intelligence"]],
-   criteres:["Extension complète (0°) obtenue","Flexion ≥ 90°","Verrouillage actif du quadriceps (jambe tendue levée sans flexum)","Douleur et gonflement maîtrisés","Marche avec cannes sans difficulté"]},
-  {nom:"Récupération", delai:"habituellement semaines 2 → 6", sem:2, exos:[["Vélo d'appartement sans résistance 15 min","endurance"],["Mini-squats 0–45° 3×15","force"],["Transferts de poids / équilibre bipodal 5 min","perception"],["Mobilité en flexion 10 min","agilite"],["Marche 20 min","endurance"]],
-   criteres:["Marche sans cannes ni boiterie","Flexion ≥ 120°","Genou sec (pas d'épanchement)","Montée d'escalier alternée","Feu vert du kiné pour le renforcement progressif"]},
-  {nom:"Renforcement", delai:"habituellement semaines 6 → 12", sem:6, exos:[["Presse ou squat progressif 3×12","force"],["Équilibre unipodal 3×30 s","perception"],["Step-up 3×12","force"],["Vélo avec résistance 25 min","endurance"],["Pont fessier unipodal 3×12","force"]],
-   criteres:["Flexion complète ou quasi complète","Équilibre unipodal stable 30 s","Squat unipodal contrôlé (genou dans l'axe)","Genou sec, stable et indolore","Feu vert du chirurgien / kiné pour la course"]},
-  {nom:"Course & pliométrie", delai:"habituellement mois 3 → 6", sem:12, exos:[["Course progressive (alternance marche / course)","endurance"],["Sauts bipodaux, réception contrôlée 3×10","agilite"],["Renforcement excentrique ischio-jambiers 3×8","force"],["Gainage 3×45 s","endurance"],["Proprioception sur plan instable 10 min","perception"]],
-   criteres:["Course 20–30 min sans douleur ni gonflement","Force du quadriceps ≥ 80 % du côté sain (test)","Sauts unipodaux maîtrisés","Feu vert pour l'agilité et les changements de direction"]},
-  {nom:"Retour au sport", delai:"habituellement mois 6 → 9 et plus", sem:24, exos:[["Changements de direction / slaloms","agilite"],["Pliométrie unipodale","agilite"],["Échauffement de prévention (type FIFA 11+)","perception"],["Renforcement complet","force"],["Entraînement spécifique à mon sport","endurance"]],
-   criteres:["Hop tests ≥ 90 % de symétrie","Force ≥ 90 % du côté sain","Confiance retrouvée (questionnaire ACL-RSI)","Au moins 9 mois depuis l'opération","Feu vert du chirurgien pour la reprise"]}
-];
-const reeduc = () => sb._session?.user?.user_metadata?.reeduc ?? null;
-const sauverReeduc = r => { if (sb._session) sb._session.user.user_metadata = {...sb._session.user.user_metadata, reeduc:r}; sb.auth.updateUser({data:{reeduc:r}}); };
-// Remplace les exercices du palier précédent par ceux du palier p
-async function installerPalier(p) {
-  for (const q of J.quetes.filter(q => q.palier != null)) oops((await sb.from("quetes").delete().eq("id", q.id)).error);
-  if (PALIERS[p]) oops((await sb.from("quetes").insert(PALIERS[p].exos.map(([titre, stat]) => ({titre, stat, xp:10 + 5 * p, type:"quotidienne", palier:p})))).error);
-}
-function afficherReeduc() {
-  const r = reeduc(), el = $("#reeduc");
-  const info = `<div class="reeduc-info">Programme indicatif inspiré des grandes phases de rééducation : exercices, charges et critères sont à adapter et valider avec ton kiné et ton chirurgien.
-    <details><summary>⚠ Quand contacter le chirurgien</summary>Fièvre &gt; 38 °C, flexion &lt; 90° à 4 semaines, flexum (extension incomplète) qui ne progresse pas, douleur vive ou gonflement brutal, mollet douloureux ou chaud.</details></div>`;
-  if (!r) { el.innerHTML = `<h3>Rééducation LCA</h3><p style="text-align:center;margin:0 0 .6rem">Transforme ta rééducation en donjon à paliers : chaque palier a ses exercices quotidiens et ses critères de passage.</p>
-    <div style="text-align:center">Date de l'opération : <input type="date" id="r-op" value="${auj()}"> <button id="r-go">Commencer</button></div>${info}`; return; }
-  const p = Math.min(r.palier, PALIERS.length - 1), P = PALIERS[p], jp = -jours(r.op), sem = Math.floor(jp / 7);
-  const ok = P.criteres.map((_, i) => !!r.ok?.[`${p}-${i}`]), tous = ok.every(Boolean);
-  el.innerHTML = `<h3>Rééducation LCA</h3>
-    <div style="text-align:center;font-size:.85rem;color:#9fb3e6">Opération le ${fmt(r.op)} · <b style="color:#fff">J+${jp}</b> (semaine ${sem + 1})</div>
-    <div class="paliers">${PALIERS.map((x, i) => `<span class="${r.fini || i < r.palier ? "fait" : i === r.palier ? "actuel" : ""}">${r.fini || i < r.palier ? "✔" : i === r.palier ? "▶" : "🔒"} ${i + 1}<br>${x.nom}</span>`).join("")}</div>
-    ${r.fini ? `<p style="text-align:center;color:#fff;font-weight:700">🏆 Tous les paliers sont franchis. Genou restauré, retour au jeu !</p>` : `
-    <div style="color:#fff;font-weight:700">Palier ${p + 1} · ${P.nom} <small style="color:#8ea2d6;font-weight:500">(${P.delai})</small></div>
-    <div style="font-size:.78rem;color:#9fb3e6;margin:.3rem 0 .2rem">Critères de passage (à cocher quand ils sont validés avec ton kiné) :</div>
-    <div class="crit">${P.criteres.map((c, i) => `<label><input type="checkbox" data-crit="${i}" ${ok[i] ? "checked" : ""}> ${esc(c)}</label>`).join("")}</div>
-    <div class="barre-xp"><i style="width:${Math.round(ok.filter(Boolean).length / ok.length * 100)}%"></i></div>
-    <div style="text-align:center;margin-top:.6rem"><button id="r-pass" ${tous ? "" : "disabled"}>⬆ Franchir le palier (+${100 * (p + 1)} XP)</button></div>`}
-    <div style="text-align:right;margin-top:.5rem"><button id="r-stop" style="font-size:.72rem;padding:.15rem .5rem">Arrêter le suivi</button></div>${info}`;
-}
-$("#reeduc").onclick = async e => {
-  const r = reeduc();
-  if (e.target.id === "r-go") {
-    const op = $("#r-op").value; if (!op) return;
-    // La quête du manga peut céder sa place aux exercices du palier 1
-    const manga = J.quetes.filter(q => q.palier == null && q.type === "quotidienne");
-    if (manga.length && confirm("Retirer la quête journalière actuelle (pompes, abdos, squats, course) pour la remplacer par les exercices du palier 1 ?"))
-      for (const q of manga) oops((await sb.from("quetes").delete().eq("id", q.id)).error);
-    sauverReeduc({op, palier:0, ok:{}}); await installerPalier(0); return chargerSolo();
-  }
-  if (e.target.id === "r-pass") {
-    const p = r.palier, suiv = PALIERS[p + 1], sem = -jours(r.op) / 7;
-    // Garde-fou : passage plus tôt que le délai habituel
-    if (suiv && sem < suiv.sem && !confirm(`Le palier « ${suiv.nom} » commence habituellement vers la semaine ${suiv.sem}. Tu en es à la semaine ${Math.floor(sem) + 1}. Ton kiné ou ton chirurgien a-t-il validé ce passage ?`)) return;
-    oops((await sb.from("journal").insert({titre:`Palier franchi : ${PALIERS[p].nom}`, xp:100 * (p + 1), stat:null, jour:auj()})).error);
-    const n = {...r, palier:p + 1, fini:!suiv}; sauverReeduc(n); await installerPalier(suiv ? p + 1 : -1);
-    fenetreSys(suiv ? "PALIER FRANCHI !" : "DONJON TERMINÉ !", suiv ? `Palier ${p + 2} débloqué · ${suiv.nom}` : "Retour au jeu autorisé 🏆");
-    return chargerSolo();
-  }
-  if (e.target.id === "r-stop") {
-    if (!confirm("Arrêter le suivi de rééducation ? Les exercices de palier seront retirés (l'XP gagnée est conservée).")) return;
-    await installerPalier(-1); sauverReeduc(null); return chargerSolo();
-  }
-};
-$("#reeduc").onchange = e => {
-  if (e.target.dataset.crit === undefined) return; const r = reeduc();
-  sauverReeduc({...r, ok:{...r.ok, [`${r.palier}-${e.target.dataset.crit}`]:e.target.checked}}); afficherReeduc();
-};
-
-// Compte à rebours jusqu'à minuit
-setInterval(() => {
-  if ($("#v-solo").classList.contains("hide")) return;
-  const r = Math.max(0, Math.floor((new Date().setHours(24, 0, 0, 0) - Date.now()) / 1000));
-  $("#chrono").textContent = [r / 3600, r % 3600 / 60, r % 60].map(x => String(Math.floor(x)).padStart(2, "0")).join(":");
-}, 1000);
 
 // ===== Schémas : zoom (boutons, Ctrl + molette ou pincement du pavé tactile) =====
 let Z = 1;
