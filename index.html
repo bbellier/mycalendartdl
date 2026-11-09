@@ -166,18 +166,26 @@ dialog::backdrop{background:#121935b0}
 .composer input{font-weight:700}
 .composer .acts{margin-top:.3rem}
 .ntitre{font-size:.8rem;font-weight:700;color:var(--texte_doux);text-transform:uppercase;letter-spacing:.05em;margin:.4rem 0 .5rem}
-.grille{columns:300px;column-gap:16px}
+.grille{columns:380px;column-gap:16px}
 .note{break-inside:avoid;margin-bottom:16px;border:1px solid var(--trait);border-radius:14px;padding:1rem 1.1rem .8rem;min-height:150px;cursor:pointer;position:relative;transition:box-shadow .2s,transform .2s}
 .note:hover{transform:translateY(-2px)}
 .note:hover{box-shadow:0 4px 14px #12193522}
-.note h4{margin:0 1.8rem .45rem 0;font-size:1.08rem}
-.note p{margin:0;white-space:pre-wrap;word-break:break-word;font-size:.92rem;line-height:1.5;color:#2b3350;max-height:24em;overflow:hidden}
-.note.long p{-webkit-mask-image:linear-gradient(#000 75%,transparent);mask-image:linear-gradient(#000 75%,transparent)}
+.note h4{margin:0 1.8rem .4rem 0;font-size:1rem}
+.note .ncont{word-break:break-word;font-size:.8rem;line-height:1.45;color:#2b3350;max-height:28em;overflow:hidden}
+.ncont .ligne{white-space:pre-wrap;min-height:1.45em}
+.ncont .pu{padding-left:1.1em;text-indent:-.75em;white-space:pre-wrap}
+.ncont .pu::before{content:"•";color:var(--bleu_fonce);font-weight:700;display:inline-block;width:.75em;text-indent:0}
+.ncont label.cl{display:flex;gap:.45rem;align-items:flex-start;margin:.12rem 0;color:#2b3350;font-weight:500;font-size:inherit;cursor:pointer;white-space:pre-wrap}
+.ncont label.cl input{margin-top:.18rem;accent-color:var(--bleu);flex:none}
+.ncont label.cl.ok span{text-decoration:line-through;opacity:.5}
+.ntools{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.7rem}
+.ntools button{font-size:.8rem;padding:.25rem .65rem}
+.note.long .ncont{-webkit-mask-image:linear-gradient(#000 75%,transparent);mask-image:linear-gradient(#000 75%,transparent)}
 .note .suite{font-size:.75rem;font-weight:700;color:var(--bleu_fonce);margin-top:.2rem}
 .note .vide-n{color:var(--texte_doux);font-style:italic}
 #d-note{width:min(880px,calc(100% - 32px))}
 #dn-titre{font-weight:700;font-size:1.25rem;border:0;border-bottom:2px solid var(--trait);border-radius:0;padding:.4rem 0}
-#dn-texte{margin-top:.6rem;height:min(58vh,560px);font-size:.98rem;line-height:1.6;resize:vertical}
+#dn-texte{margin-top:.6rem;height:min(62vh,620px);font-size:.88rem;line-height:1.55;resize:vertical}
 .nbar .prim{margin-left:auto}
 .note .pin{position:absolute;top:.4rem;right:.4rem;border:0;background:none;padding:.1rem;opacity:.3;font-size:.95rem}
 .note .pin.on,.note:hover .pin{opacity:1}
@@ -302,6 +310,11 @@ dialog::backdrop{background:#121935b0}
 <!-- ===== Fenêtre note ===== -->
 <dialog id="d-note"><form method="dialog">
   <input id="dn-titre" placeholder="Titre">
+  <div class="ntools">
+    <button type="button" data-fmt="puce" title="Transformer les lignes sélectionnées en liste à puces">• Puces</button>
+    <button type="button" data-fmt="case" title="Transformer les lignes sélectionnées en cases à cocher">☐ Cases à cocher</button>
+    <button type="button" data-fmt="coche" title="Cocher ou décocher la ligne du curseur">☑ Cocher / décocher</button>
+  </div>
   <textarea id="dn-texte" placeholder="Écris ta note… (Ctrl + Entrée pour enregistrer)"></textarea>
   <label>Couleur</label><div class="pastels" id="dn-coul"></div>
   <label class="opt"><input type="checkbox" id="dn-pin"> 📌 Épingler en haut</label>
@@ -790,9 +803,9 @@ function afficherNotes() {
   const q = $("#n-cherche").value.trim().toLowerCase();
   const ns = N.liste.filter(n => !q || (n.titre + " " + n.contenu).toLowerCase().includes(q));
   // Longue note : fondu en bas de carte et invitation à l'ouvrir en entier
-  const longue = n => n.contenu.split("\n").length > 16 || n.contenu.length > 900;
+  const longue = n => n.contenu.split("\n").length > 19 || n.contenu.length > 1400;
   const carte = n => `<div class="note ${longue(n) ? "long" : ""}" data-id="${n.id}" style="background:${n.couleur}"><button class="pin ${n.epingle ? "on" : ""}" title="${n.epingle ? "Désépingler" : "Épingler"}">📌</button>
-    ${n.titre ? `<h4>${esc(n.titre)}</h4>` : ""}<p>${n.contenu ? esc(n.contenu) : `<span class="vide-n">Note vide</span>`}</p>${longue(n) ? `<div class="suite">Ouvrir la note en entier ›</div>` : ""}
+    ${n.titre ? `<h4>${esc(n.titre)}</h4>` : ""}<div class="ncont">${n.contenu ? rendreNote(n.contenu) : `<span class="vide-n">Note vide</span>`}</div>${longue(n) ? `<div class="suite">Ouvrir la note en entier ›</div>` : ""}
     <small>${new Date(n.updated_at).toLocaleDateString("fr-FR", {day:"numeric", month:"short"})}</small></div>`;
   const ep = ns.filter(n => n.epingle), au = ns.filter(n => !n.epingle);
   $("#notes").innerHTML = (ep.length ? `<div class="ntitre">📌 Épinglées</div><div class="grille">${ep.map(carte).join("")}</div>` : "")
@@ -808,10 +821,55 @@ function ouvrirNote(n) {
   if (n) { const t = $("#dn-texte"); t.focus(); t.setSelectionRange(0, 0); t.scrollTop = 0; } else $("#dn-titre").focus();
 }
 $("#n-ajout").onclick = () => ouvrirNote(null);
+// Outils de l'éditeur : appliquer un format aux lignes sélectionnées (ou à la ligne du curseur)
+function formater(type) {
+  const t = $("#dn-texte"), v = t.value, d = v.lastIndexOf("\n", t.selectionStart - 1) + 1;
+  let f = v.indexOf("\n", Math.max(t.selectionEnd - (t.selectionEnd > t.selectionStart && v[t.selectionEnd - 1] === "\n" ? 1 : 0), d)); if (f < 0) f = v.length;
+  const lignes = v.slice(d, f).split("\n"), nu = l => l.replace(RX_CASE, "$1").replace(RX_PUCE, "$1");
+  const deja = type === "puce" ? lignes.every(l => RX_PUCE.test(l) && !RX_CASE.test(l)) : lignes.every(l => RX_CASE.test(l));
+  const nv = lignes.map(l => {
+    if (type === "coche") return RX_CASE.test(l) ? l.replace(RX_CASE, (x, ind, m) => `${ind}${coche(m) ? "☐" : "☑"} `) : l;
+    if (deja) return nu(l);
+    const ind = l.match(/^\s*/)[0]; return `${ind}${type === "puce" ? "• " : "☐ "}${nu(l).slice(ind.length)}`;
+  }).join("\n");
+  // Sélection conservée si plusieurs lignes étaient sélectionnées, sinon curseur en fin de ligne pour continuer à écrire
+  const sel = t.selectionEnd > t.selectionStart; t.setRangeText(nv, d, f, "end");
+  sel ? t.setSelectionRange(d, d + nv.length) : t.setSelectionRange(d + nv.length, d + nv.length); t.focus();
+}
+document.querySelectorAll("[data-fmt]").forEach(b => b.onclick = () => formater(b.dataset.fmt));
+// Entrée dans une liste : continuer la liste (nouvelle puce ou case vide) ; sur une ligne vide de liste : sortir de la liste
+$("#dn-texte").addEventListener("keydown", e => {
+  if (e.key !== "Enter" || e.ctrlKey || e.metaKey || e.shiftKey || e.isComposing) return;
+  const t = e.target, v = t.value, d = v.lastIndexOf("\n", t.selectionStart - 1) + 1, ligne = v.slice(d, t.selectionStart);
+  const m = ligne.match(RX_CASE) || ligne.match(RX_PUCE); if (!m) return;
+  e.preventDefault();
+  if (ligne.slice(m[0].length).trim() === "") { t.setRangeText(m[1], d, t.selectionStart, "end"); return; }
+  t.setRangeText("\n" + m[1] + (RX_CASE.test(ligne) ? "☐ " : "• "), t.selectionStart, t.selectionEnd, "end");
+});
 // Entrée dans le titre : passer au texte (sans enregistrer)
 $("#dn-titre").onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); $("#dn-texte").focus(); } };
 // Épingler depuis la carte, ou ouvrir la note
+// Contenu d'une note : « • » ou « - » = puce, « ☐ » ou « [ ] » = case à cocher, « ☑ » ou « [x] » = case cochée (barrée)
+const RX_CASE = /^(\s*)(☐|☑|\[ \]|\[x\])\s?/i, RX_PUCE = /^(\s*)(•|-|\*)\s+/;
+const coche = m => m === "☑" || /x/i.test(m);
+function rendreNote(t) {
+  return t.split("\n").map((l, i) => {
+    let m = l.match(RX_CASE);
+    if (m) return `<label class="cl ${coche(m[2]) ? "ok" : ""}"><input type="checkbox" data-l="${i}" ${coche(m[2]) ? "checked" : ""}><span>${esc(l.slice(m[0].length))}</span></label>`;
+    m = l.match(RX_PUCE); if (m) return `<div class="pu">${esc(l.slice(m[0].length))}</div>`;
+    return `<div class="ligne">${esc(l)}</div>`;
+  }).join("");
+}
+// Cocher ou décocher la ligne i d'un texte
+const basculerLigne = (t, i) => t.split("\n").map((l, k) => k !== i ? l : l.replace(RX_CASE, (x, ind, m) => `${ind}${coche(m) ? "☐" : "☑"} `)).join("\n");
 $("#notes").onclick = async e => {
+  // Case cochée directement sur la carte (sans ouvrir la note ni changer son ordre)
+  if (e.target.matches(".ncont input[data-l]")) {
+    e.stopPropagation(); const n = N.liste.find(x => x.id === e.target.closest(".note").dataset.id);
+    n.contenu = basculerLigne(n.contenu, +e.target.dataset.l); afficherNotes();
+    return oops((await sb.from("notes").update({contenu:n.contenu}).eq("id", n.id)).error);
+  }
+  if (e.target.closest("label.cl")) return;
   const el = e.target.closest(".note"); if (!el) return; const n = N.liste.find(x => x.id === el.dataset.id);
   if (e.target.closest(".pin")) { oops((await sb.from("notes").update({epingle:!n.epingle}).eq("id", n.id)).error); n.epingle = !n.epingle; return afficherNotes(); }
   ouvrirNote(n);
