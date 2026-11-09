@@ -157,6 +157,43 @@ dialog::backdrop{background:#121935b0}
 .bloc .ecl{background:#ffffff30;border:0;padding:.05rem .3rem;border-radius:6px;color:#fff}
 .bloc .ecl:hover{background:#ffffff70}
 #lasso{position:absolute;border:2px dashed var(--bleu);background:#15acfd18;pointer-events:none}
+/* ===== Ma journée : planning horaire du jour ===== */
+.jbar{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;padding:10px 16px;min-height:var(--haut_barre)}
+.jbar h2{min-width:200px;font-size:1.3rem}
+.jbar h2::first-letter{text-transform:uppercase}
+.jnav{display:flex;border:1px solid var(--trait);border-radius:10px;overflow:hidden}
+.jnav button{border:0;border-radius:0;padding:.4rem .9rem}
+.jnav button+button{border-left:1px solid var(--trait)}
+.jnav button.on{background:var(--nuit);color:var(--bleu)}
+.jcol.lecture{cursor:default}.jcol.lecture .jblk{cursor:default}
+.jbar .astuce{font-size:.75rem;color:var(--texte_doux);margin-right:auto}
+.jgrid{display:grid;grid-template-columns:2fr 1fr;gap:16px;padding:0 16px 12px;height:calc(100vh - var(--haut_nav) - var(--haut_barre));min-height:460px}
+@media (max-width:860px){.jgrid{grid-template-columns:1fr;height:auto}.jscroll{max-height:70vh}}
+.jscroll{flex:1;min-height:0;overflow:auto;border-radius:8px;background:var(--blanc);border:1px solid var(--trait)}
+.jcol{position:relative;margin-left:52px;border-left:1px solid var(--trait);cursor:crosshair;touch-action:pan-y;user-select:none}
+.jhr{position:absolute;left:0;right:0;border-top:1px solid var(--trait)}
+.jhr span{position:absolute;left:-50px;top:-.6em;width:44px;text-align:right;font-size:.72rem;color:var(--texte_doux);font-weight:700}
+.jhr.demi{border-top-style:dashed;border-top-color:#eef1f6}
+.jblk{position:absolute;border-radius:8px;padding:.2rem .5rem;overflow:hidden;color:#fff;cursor:grab;box-shadow:0 2px 6px #12193530;touch-action:none;font-size:.8rem;line-height:1.25;border:1px solid #ffffff60}
+.jblk b{display:block;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.jblk small{opacity:.9;font-weight:600}
+.jblk .jn{opacity:.85;font-size:.72rem;white-space:pre-wrap}
+.jblk.fait{opacity:.45}.jblk.fait b{text-decoration:line-through}
+.jblk .jpoig{position:absolute;left:0;right:0;bottom:0;height:9px;cursor:ns-resize}
+.jblk .jpoig::after{content:"";position:absolute;left:50%;bottom:3px;width:26px;margin-left:-13px;height:3px;border-radius:2px;background:#ffffffa0}
+.jblk.fantome{background:#15acfd55;border:2px dashed var(--bleu);color:var(--nuit);box-shadow:none;pointer-events:none}
+.jnow{position:absolute;left:-6px;right:0;border-top:2px solid var(--alerte);z-index:3;pointer-events:none}
+.jnow::before{content:"";position:absolute;left:-1px;top:-6px;width:10px;height:10px;border-radius:50%;background:var(--alerte)}
+.jside h3{margin:.2rem 0 .5rem}
+.jstat{display:flex;gap:.5rem;margin-bottom:.6rem}
+.jstat div{flex:1;background:var(--blanc);border:1px solid var(--trait);border-radius:10px;padding:.4rem .5rem;text-align:center;font-size:.72rem;color:var(--texte_doux)}
+.jstat b{display:block;font-size:1.1rem;color:var(--nuit)}
+.jprog{flex:1;min-height:0;overflow:auto}
+.jit{display:flex;gap:.5rem;align-items:center;padding:.35rem .5rem;margin-bottom:5px;background:var(--blanc);border:1px solid var(--trait);border-left:4px solid;border-radius:0 8px 8px 0;font-size:.85rem;cursor:pointer}
+.jit .h{font-weight:700;font-size:.75rem;color:var(--texte_doux);white-space:nowrap}
+.jit span:not(.h){flex:1}
+.jit.fait span:not(.h){text-decoration:line-through;opacity:.55}
+.jtache{font-size:.82rem;padding:.25rem 0;border-bottom:1px dashed var(--trait);cursor:pointer}
 /* ===== Notes (façon Keep) ===== */
 #v-notes{padding:12px 16px}
 .nbar{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-bottom:12px}
@@ -215,7 +252,7 @@ dialog::backdrop{background:#121935b0}
 <section id="app" class="hide">
   <nav>
     <span class="logo"><img src="https://bbellier.github.io/mydatafutee/img/logo.png" alt="DATAfutée"></span>
-    <div class="onglets"><button class="on" data-v="agenda">📅<span> Agenda</span></button><button data-v="schemas">🧠<span> Schémas</span></button><button data-v="notes">📝<span> Notes</span></button></div>
+    <div class="onglets"><button class="on" data-v="agenda">📅<span> Agenda</span></button><button data-v="schemas">🧠<span> Schémas</span></button><button data-v="notes">📝<span> Notes</span></button><button data-v="journee">🕒<span> Ma journée</span></button></div>
     <button id="b-out" title="Déconnexion">⏻</button>
   </nav>
 
@@ -268,6 +305,24 @@ dialog::backdrop{background:#121935b0}
     <div id="canvas-wrap"><div id="zone"><div id="canvas"><svg id="liens"></svg></div></div></div>
   </div>
 
+  <!-- ===== Onglet Ma journée ===== -->
+  <div id="v-journee" class="hide">
+    <div class="jbar">
+      <div class="jnav"><button data-j="-1">‹ Hier</button><button data-j="0">Aujourd'hui</button><button data-j="1">Demain ›</button></div>
+      <h2 id="j-date"></h2>
+      <span class="astuce" id="j-astuce"></span>
+      <button class="prim" id="j-ajout">+ Activité</button>
+    </div>
+    <div class="jgrid">
+      <div class="panel"><div class="jscroll" id="j-scroll"><div class="jcol" id="j-col"></div></div></div>
+      <div class="panel jside">
+        <div class="jstat"><div><b id="j-plan">0 h</b>planifié</div><div><b id="j-fait">0 h</b>fait</div><div><b id="j-nb">0</b>activités</div></div>
+        <h3>Programme</h3><div class="jprog" id="j-liste"></div>
+        <h3 style="margin-top:.8rem">Tâches de l'agenda</h3><div id="j-taches"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== Onglet Notes ===== -->
   <div id="v-notes" class="hide">
     <div class="nbar"><input id="n-cherche" type="search" placeholder="🔍 Rechercher dans les notes"><button class="prim" id="n-ajout">+ Nouvelle note</button></div>
@@ -305,6 +360,20 @@ dialog::backdrop{background:#121935b0}
   <label class="opt"><input type="checkbox" id="t-etoile"> ⭐ Rappel par mail 7 jours et 1 jour avant l'échéance</label>
   <label><input type="checkbox" id="t-fait"> Terminée</label>
   <div class="acts"><button type="button" class="dang" id="t-suppr">Supprimer</button><span class="sp"></span><button value="cancel" formnovalidate>Annuler</button><button class="prim" value="ok">Enregistrer</button></div>
+</form></dialog>
+
+<!-- ===== Fenêtre activité (Ma journée) ===== -->
+<dialog id="d-act"><form method="dialog">
+  <h3 id="da-titre">Activité</h3>
+  <label>Intitulé</label><input id="ac-titre" required placeholder="Ex. : Séance de kiné, réunion, sport…">
+  <div class="row">
+    <div><label>Début</label><input id="ac-debut" type="time" step="900" required></div>
+    <div><label>Fin</label><input id="ac-fin" type="time" step="900" required></div>
+  </div>
+  <label>Couleur</label><div class="nuancier" data-cible="#ac-coul"></div><input id="ac-coul" type="color" class="hide">
+  <label>Notes</label><textarea id="ac-notes" rows="2"></textarea>
+  <label><input type="checkbox" id="ac-fait"> Fait</label>
+  <div class="acts"><button type="button" class="dang" id="ac-suppr">Supprimer</button><span class="sp"></span><button value="cancel" formnovalidate>Annuler</button><button class="prim" value="ok">Enregistrer</button></div>
 </form></dialog>
 
 <!-- ===== Fenêtre note ===== -->
@@ -406,8 +475,8 @@ sb.auth.onAuthStateChange((ev, session) => {
 const vue = () => $(".onglets .on").dataset.v;
 document.querySelectorAll(".onglets button").forEach(b => b.onclick = () => {
   document.querySelectorAll(".onglets button").forEach(x => x.classList.toggle("on", x === b));
-  ["agenda", "schemas", "notes"].forEach(v => $("#v-" + v).classList.toggle("hide", b.dataset.v !== v));
-  ({agenda:calendrier, schemas:() => chargerSchemas(), notes:chargerNotes})[b.dataset.v]();
+  ["agenda", "schemas", "notes", "journee"].forEach(v => $("#v-" + v).classList.toggle("hide", b.dataset.v !== v));
+  ({agenda:calendrier, schemas:() => chargerSchemas(), notes:chargerNotes, journee:() => { JR.jour = auj(); chargerJournee(true); }})[b.dataset.v]();
 });
 
 // ===== Clavier : ← → changent de mois, Échap annule une liaison =====
@@ -791,6 +860,117 @@ function supprimerBloc() {
   M.sel.delete(id); if (M.src === id) M.src = null; if ($("#d-bloc").open) $("#d-bloc").close(); sauver(); dessiner();
 }
 $("#b-suppr").onclick = supprimerBloc;
+
+// ===== Ma journée : planning horaire (chaque jour repart d'une page vierge) =====
+const H0 = 6, H1 = 24, PXH = 48, PAS = 15;
+let JR = {jour:auj(), acts:[], edit:null, coul:"#15acfd"};
+const hm = m => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+const enMin = t => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
+const duree = m => m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? String(m % 60).padStart(2, "0") : ""}` : `${m} min`;
+const yMin = m => (m - H0 * 60) * PXH / 60;
+async function chargerJournee(defiler) {
+  // Remise à zéro : les journées antérieures à hier sont effacées
+  if (!JR.purge) { JR.purge = true; oops((await sb.from("journee").delete().lt("jour", plusJour(auj(), -1))).error); }
+  const {data, error} = await sb.from("journee").select("*").eq("jour", JR.jour).order("debut"); oops(error);
+  JR.acts = data; afficherJournee();
+  // À l'ouverture : afficher l'heure actuelle (ou 8 h) en haut de la zone visible
+  if (defiler) { const n = new Date(), m = JR.jour === auj() ? n.getHours() * 60 + n.getMinutes() - 60 : 8 * 60; $("#j-scroll").scrollTop = Math.max(0, yMin(m)); }
+}
+function afficherJournee() {
+  const col = $("#j-col"), d = new Date(JR.jour + "T12:00");
+  $("#j-date").textContent = d.toLocaleDateString("fr-FR", {weekday:"long", day:"numeric", month:"long"});
+  // Hier : consultation seule (bilan, on peut juste cocher ce qui a été fait) ; aujourd'hui et demain : planification
+  JR.lecture = JR.jour < auj(); col.classList.toggle("lecture", JR.lecture); $("#j-ajout").classList.toggle("hide", JR.lecture);
+  document.querySelectorAll(".jnav [data-j]").forEach(b => b.classList.toggle("on", plusJour(auj(), +b.dataset.j) === JR.jour));
+  $("#j-astuce").textContent = JR.lecture ? "Hier : consultation seule · tu peux encore cocher ce qui a été fait"
+    : "Glisse dans la colonne pour créer une activité · déplace-la ou tire son bord bas pour changer l'heure de fin";
+  col.style.height = (H1 - H0) * PXH + "px";
+  let h = "";
+  for (let k = H0; k < H1; k++) h += `<div class="jhr" style="top:${yMin(k * 60)}px"><span>${hm(k * 60)}</span></div><div class="jhr demi" style="top:${yMin(k * 60 + 30)}px"></div>`;
+  // Activités qui se chevauchent : réparties côte à côte
+  const as = [...JR.acts].sort((a, b) => a.debut - b.debut || b.fin - a.fin), pos = {}; let grp = [], finGrp = -1;
+  const ranger = () => { const cols = []; grp.forEach(a => { let c = cols.findIndex(f => f <= a.debut); if (c < 0) { c = cols.length; cols.push(0); } cols[c] = a.fin; pos[a.id] = {c}; }); grp.forEach(a => pos[a.id].n = cols.length); grp = []; };
+  as.forEach(a => { if (a.debut >= finGrp && grp.length) ranger(); grp.push(a); finGrp = Math.max(finGrp, a.fin); }); ranger();
+  h += as.map(a => { const p = pos[a.id], haut = Math.max(18, yMin(a.fin) - yMin(a.debut));
+    return `<div class="jblk ${a.fait ? "fait" : ""}" data-id="${a.id}" style="top:${yMin(a.debut)}px;height:${haut}px;left:calc(${p.c / p.n * 100}% + 4px);width:calc(${100 / p.n}% - 8px);background:${a.couleur}">
+      <b>${esc(a.titre)}</b><small>${hm(a.debut)} – ${hm(a.fin)}</small>${a.notes && haut > 60 ? `<div class="jn">${esc(a.notes)}</div>` : ""}<div class="jpoig" title="Tirer pour changer l'heure de fin"></div></div>`; }).join("");
+  col.innerHTML = h + `<div class="jnow hide" id="j-now"></div>`; maintenant();
+  // Résumé et programme
+  const plan = as.reduce((t, a) => t + a.fin - a.debut, 0), fait = as.filter(a => a.fait).reduce((t, a) => t + a.fin - a.debut, 0);
+  $("#j-plan").textContent = duree(plan); $("#j-fait").textContent = duree(fait); $("#j-nb").textContent = as.length;
+  $("#j-liste").innerHTML = as.map(a => `<div class="jit ${a.fait ? "fait" : ""}" data-id="${a.id}" style="border-left-color:${a.couleur}"><input type="checkbox" ${a.fait ? "checked" : ""}><span class="h">${hm(a.debut)}–${hm(a.fin)}</span><span>${esc(a.titre)}</span></div>`).join("")
+    || `<p class="m" style="color:var(--texte_doux);font-size:.85rem">Journée vierge : glisse dans la colonne des heures pour planifier.</p>`;
+  // Tâches de l'agenda prévues ce jour-là (pour s'en inspirer)
+  const ts = S.taches.filter(t => !t.fait && (t.echeance === JR.jour || (t.debut && t.debut <= JR.jour && JR.jour <= t.echeance)));
+  $("#j-taches").innerHTML = ts.map(t => `<div class="jtache" data-t="${t.id}">${esc(cat(t.categorie_id).icone)} ${esc(t.titre)}</div>`).join("") || `<p style="color:var(--texte_doux);font-size:.8rem">Aucune tâche ce jour-là.</p>`;
+}
+// Ligne rouge de l'heure actuelle
+function maintenant() {
+  const l = $("#j-now"); if (!l) return; const n = new Date(), m = n.getHours() * 60 + n.getMinutes();
+  l.classList.toggle("hide", JR.jour !== auj() || m < H0 * 60); l.style.top = yMin(m) + "px";
+}
+setInterval(maintenant, 60000);
+// Navigation entre les jours
+document.querySelectorAll(".jnav [data-j]").forEach(b => b.onclick = () => { JR.jour = plusJour(auj(), +b.dataset.j); chargerJournee(true); });
+const plusJour = (s, n) => { const d = new Date(s + "T12:00"); d.setDate(d.getDate() + n); return iso(d); };
+// Glisser : créer (zone vide), déplacer (activité) ou changer l'heure de fin (bord bas)
+const minDe = (y, col) => Math.min(H1 * 60, Math.max(H0 * 60, Math.round(((y - col.getBoundingClientRect().top) / PXH * 60 + H0 * 60) / PAS) * PAS));
+$("#j-col").onpointerdown = e => {
+  if (e.button > 0 || JR.lecture) return; const col = $("#j-col"), blk = e.target.closest(".jblk"), y0 = e.clientY; let bouge = false;
+  // Création : sur ordinateur on glisse, au doigt un simple appui propose 1 h
+  if (!blk) {
+    if (e.pointerType !== "mouse") return; e.preventDefault();
+    const m0 = minDe(y0, col), f = document.createElement("div"); f.className = "jblk fantome"; f.style.cssText = `left:4px;right:4px;top:${yMin(m0)}px;height:${PXH / 4}px`; col.appendChild(f);
+    let a = m0, b = m0 + PAS; col.setPointerCapture(e.pointerId);
+    col.onpointermove = m => { bouge = true; const x = minDe(m.clientY, col); a = Math.min(m0, x); b = Math.max(m0, x, a + PAS); f.style.top = yMin(a) + "px"; f.style.height = yMin(b) - yMin(a) + "px"; f.innerHTML = `<b>${hm(a)} – ${hm(b)}</b>`; };
+    col.onpointerup = () => { col.onpointermove = col.onpointerup = null; f.remove(); bouge ? ouvrirAct(null, a, b) : ouvrirAct(null, m0, Math.min(H1 * 60, m0 + 60)); };
+    return;
+  }
+  // Déplacement ou redimensionnement d'une activité (pas de 15 min)
+  const a = JR.acts.find(x => x.id === blk.dataset.id), redim = !!e.target.closest(".jpoig"), d0 = a.debut, f0 = a.fin;
+  blk.setPointerCapture(e.pointerId);
+  blk.onpointermove = m => {
+    const dm = Math.round((m.clientY - y0) / PXH * 60 / PAS) * PAS; if (!bouge && Math.abs(m.clientY - y0) < 4) return; bouge = true;
+    if (redim) a.fin = Math.min(H1 * 60, Math.max(d0 + PAS, f0 + dm)); else { const l = f0 - d0; a.debut = Math.min(H1 * 60 - l, Math.max(H0 * 60, d0 + dm)); a.fin = a.debut + l; }
+    blk.style.top = yMin(a.debut) + "px"; blk.style.height = Math.max(18, yMin(a.fin) - yMin(a.debut)) + "px"; blk.querySelector("small").textContent = `${hm(a.debut)} – ${hm(a.fin)}`;
+  };
+  blk.onpointerup = async () => {
+    blk.onpointermove = blk.onpointerup = null;
+    if (!bouge) return ouvrirAct(a);
+    afficherJournee(); oops((await sb.from("journee").update({debut:a.debut, fin:a.fin}).eq("id", a.id)).error);
+  };
+};
+// Au doigt : un appui sur une zone vide crée une activité d'une heure
+$("#j-col").onclick = e => { if (JR.lecture || e.pointerType === "mouse" || e.target.closest(".jblk") || !e.isTrusted) return; const m = minDe(e.clientY, $("#j-col")); ouvrirAct(null, m, Math.min(H1 * 60, m + 60)); };
+$("#j-ajout").onclick = () => { const n = new Date(), m = Math.max(H0 * 60, Math.ceil((n.getHours() * 60 + n.getMinutes()) / PAS) * PAS); ouvrirAct(null, Math.min(m, H1 * 60 - 60), Math.min(m + 60, H1 * 60)); };
+// Programme : cocher « fait » ou ouvrir l'activité ; tâche de l'agenda : l'ouvrir
+$("#j-liste").onclick = async e => {
+  const el = e.target.closest(".jit"); if (!el) return; const a = JR.acts.find(x => x.id === el.dataset.id);
+  if (e.target.type === "checkbox") { a.fait = !a.fait; afficherJournee(); return oops((await sb.from("journee").update({fait:a.fait}).eq("id", a.id)).error); }
+  ouvrirAct(a);
+};
+$("#j-taches").onclick = e => { const el = e.target.closest("[data-t]"); if (el) ouvrirTache(S.taches.find(t => t.id === el.dataset.t)); };
+// Fenêtre activité
+$("#d-act .nuancier").onclick = e => { if (e.target.dataset.c) choisirCoulAct(e.target.dataset.c); };
+const choisirCoulAct = c => { JR.coul = c; document.querySelectorAll("#d-act .nuancier button").forEach(b => b.style.outline = b.dataset.c === c ? "3px solid var(--nuit)" : ""); };
+function ouvrirAct(a, d, f) {
+  if (JR.lecture) return;
+  JR.edit = a; $("#da-titre").textContent = a ? "Modifier l'activité" : "Nouvelle activité";
+  $("#ac-titre").value = a?.titre ?? ""; $("#ac-debut").value = hm(a?.debut ?? d); $("#ac-fin").value = hm(Math.min(a?.fin ?? f, 23 * 60 + 59));
+  $("#ac-notes").value = a?.notes ?? ""; $("#ac-fait").checked = !!a?.fait; choisirCoulAct(a?.couleur ?? "#15acfd");
+  $("#ac-suppr").classList.toggle("hide", !a); $("#d-act").returnValue = ""; $("#d-act").showModal(); $("#ac-titre").focus();
+}
+$("#d-act").onclose = async () => {
+  if ($("#d-act").returnValue !== "ok") return;
+  let debut = enMin($("#ac-debut").value), fin = enMin($("#ac-fin").value); if (fin === 23 * 60 + 59) fin = 24 * 60;
+  if (fin <= debut) fin = Math.min(H1 * 60, debut + 60);
+  const v = {titre:$("#ac-titre").value.trim(), debut, fin, couleur:JR.coul, notes:$("#ac-notes").value.trim() || null, fait:$("#ac-fait").checked};
+  oops((JR.edit ? await sb.from("journee").update(v).eq("id", JR.edit.id) : await sb.from("journee").insert({...v, jour:JR.jour})).error); chargerJournee();
+};
+$("#ac-suppr").onclick = async () => {
+  if (!confirm(`Supprimer « ${JR.edit.titre} » ?`)) return;
+  oops((await sb.from("journee").delete().eq("id", JR.edit.id)).error); $("#d-act").close(); chargerJournee();
+};
 
 // ===== Notes (façon Keep) =====
 const PASTELS = ["#ffffff","#e6f6ff","#dcf5e3","#fff1d6","#fde2e3","#efe7ff","#f1f3f7"];
