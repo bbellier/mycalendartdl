@@ -1,0 +1,112 @@
+# Rappels de l'agenda par e-mail (même principe que le site de L'Équipage)
+# Chaque matin vers 7 h-8 h : pour chaque compte, les tâches étoilées non terminées dont l'échéance tombe
+# DEMAIN ou DANS 7 JOURS, envoyées par Gmail à l'adresse de connexion du compte.
+# La requête quotidienne garde aussi la base Supabase éveillée.
+#
+# Secrets à créer dans GitHub > Settings > Secrets and variables > Actions :
+#   SUPABASE_URL         https://xxxx.supabase.co
+#   SUPABASE_SECRET_KEY  clé secrète Supabase (Project Settings > API Keys > Secret keys, sb_secret_...)
+#   GMAIL_USER           adresse Gmail qui envoie
+#   GMAIL_APP_PASSWORD   mot de passe d'application de cette adresse (16 lettres, sans espaces)
+#   APP_URL              adresse de l'agenda (ex. https://bbellier.github.io/mycalendartdl/) — facultatif
+name: Rappels e-mail
+on:
+  schedule:
+    - cron: "7 6 * * *"   # 6 h 07 UTC = 7 h 07 à Paris en hiver, 8 h 07 en été
+  workflow_dispatch:
+    inputs:
+      test:
+        description: "Mode test : affiche les e-mails sans les envoyer (oui/non)"
+        default: "non"
+      essai:
+        description: "Essai : oui = envoie un e-mail d'exemple à l'adresse Gmail, même sans tâche à rappeler"
+        default: "non"
+jobs:
+  rappels:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Envoyer les rappels de tâches étoilées
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          APP_URL: ${{ secrets.APP_URL }}
+          TEST: ${{ github.event.inputs.test }}
+          ESSAI: ${{ github.event.inputs.essai }}
+        run: |
+          python3 - <<'PY'
+          import os, json, smtplib, urllib.request, html
+          from datetime import date, datetime, timedelta
+          from email.message import EmailMessage
+          from zoneinfo import ZoneInfo
+
+          URL = os.environ["SUPABASE_URL"].rstrip("/"); KEY = os.environ["SUPABASE_KEY"]
+          APP = os.environ.get("APP_URL") or ""; GMAIL = os.environ.get("GMAIL_USER", "")
+          TEST = (os.environ.get("TEST") or "non").strip().lower() == "oui"
+          ESSAI = (os.environ.get("ESSAI") or "non").strip().lower() == "oui"
+          H = {"apikey": KEY}
+          if not KEY.startswith("sb_"): H["Authorization"] = "Bearer " + KEY   # anciennes clés service_role (JWT)
+
+          def api(chemin):
+              with urllib.request.urlopen(urllib.request.Request(f"{URL}/{chemin}", headers=H), timeout=30) as r:
+                  return json.loads(r.read().decode() or "null")
+
+          # Dates cibles à l'heure de Paris
+          auj = datetime.now(ZoneInfo("Europe/Paris")).date()
+          j1, j7 = (auj + timedelta(days=1)).isoformat(), (auj + timedelta(days=7)).isoformat()
+          taches = api(f"rest/v1/taches?select=user_id,titre,echeance,notes,categories(nom,icone,couleur)&etoile=eq.true&fait=eq.false&echeance=in.({j1},{j7})&order=echeance")
+          print(f"{auj} : {len(taches)} tâche(s) étoilée(s) à rappeler (échéances du {j1} et du {j7})")
+
+          # Essai : e-mail d'exemple envoyé à l'adresse Gmail, sans dépendre des tâches du jour
+          if ESSAI:
+              taches = [{"user_id": "essai", "titre": "Exemple de tâche étoilée", "echeance": j1, "notes": "E-mail d'essai : la configuration fonctionne.", "categories": None}]
+          if not taches: raise SystemExit(0)
+
+          # Adresses de connexion des comptes
+          if ESSAI: mail = {"essai": GMAIL}
+          else: mail = {u["id"]: u["email"] for u in api("auth/v1/admin/users?per_page=200")["users"]}
+
+          mois = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"]
+          jours_sem = ["lundi","mardi","mercredi","jeudi","vendredi","samedi","dimanche"]
+          def fr(d): d = date.fromisoformat(d); return f"{jours_sem[d.weekday()]} {d.day} {mois[d.month-1]}"
+          e = html.escape
+
+          def message(dest, ts):
+              demain = [t for t in ts if t["echeance"] == j1]; semaine = [t for t in ts if t["echeance"] == j7]
+              sujet = (f"Rappel : {len(demain)} échéance(s) demain" + (f", {len(semaine)} dans 7 jours" if semaine else "")) if demain else f"Rappel : {len(semaine)} échéance(s) dans 7 jours"
+              if ESSAI: sujet = "[Essai] " + sujet
+              # Version texte
+              texte = ["Bonjour,", ""]
+              for titre, lot in (("Demain", demain), ("Dans 7 jours", semaine)):
+                  if lot: texte += [f"{titre} :"] + [f"  • {t['titre']} ({fr(t['echeance'])})" + (f" — {t['notes']}" if t.get("notes") else "") for t in lot] + [""]
+              if APP: texte += [f"Ouvrir l'agenda : {APP}"]
+              # Version mise en page, aux couleurs DATAfutée
+              def ligne(t):
+                  c = t.get("categories") or {}
+                  return (f"<tr><td style='border-left:4px solid {e(c.get('couleur') or '#15acfd')};background:#f6f8fc;padding:8px 12px'>"
+                          f"{e(c.get('icone') or '⭐')} <b>{e(t['titre'])}</b><br><small style='color:#4a5170'>{e(c['nom']) + ' · ' if c.get('nom') else ''}{fr(t['echeance'])}</small>"
+                          + (f"<br><small style='color:#4a5170'>{e(t['notes'])}</small>" if t.get("notes") else "") + "</td></tr>")
+              def bloc(titre, lot):
+                  return (f"<h3 style='color:#121935;border-left:4px solid #15acfd;padding-left:8px;margin:18px 0 6px'>{titre}</h3>"
+                          f"<table style='border-collapse:separate;border-spacing:0 6px;width:100%'>{''.join(ligne(t) for t in lot)}</table>") if lot else ""
+              bouton = f"<p style='margin:18px 0 0'><a href='{e(APP)}' style='display:inline-block;background:#15acfd;color:#121935;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:bold'>Ouvrir l'agenda</a></p>" if APP else ""
+              page = (f"<div style='font-family:Arial,sans-serif;max-width:560px;margin:auto'>"
+                      f"<div style='background:#121935;color:#fff;padding:14px 18px;border-radius:12px 12px 0 0;font-weight:bold'>⭐ Rappel de l'agenda</div>"
+                      f"<div style='border:1px solid #dde3ee;border-top:3px solid #15acfd;padding:4px 18px 16px;border-radius:0 0 12px 12px'>{bloc('Demain', demain)}{bloc('Dans 7 jours', semaine)}{bouton}</div></div>")
+              msg = EmailMessage(); msg["Subject"] = sujet; msg["From"] = f"Agenda DATAfutée <{GMAIL}>"; msg["To"] = dest
+              msg.set_content("\n".join(texte)); msg.add_alternative(page, subtype="html")
+              return msg
+
+          # Un e-mail par compte
+          par_user = {}
+          for t in taches: par_user.setdefault(t["user_id"], []).append(t)
+          envois = [(mail[u], ts) for u, ts in par_user.items() if mail.get(u)]
+          if TEST:
+              for dest, ts in envois: print("---", dest); print(message(dest, ts).get_body(("plain",)).get_content())
+              raise SystemExit(0)
+          with smtplib.SMTP_SSL("smtp.gmail.com", 465) as s:
+              s.login(GMAIL, os.environ["GMAIL_APP_PASSWORD"].replace(" ", ""))
+              for dest, ts in envois:
+                  s.send_message(message(dest, ts)); print(f"envoyé : {len(ts)} tâche(s) → {dest}")
+          PY
